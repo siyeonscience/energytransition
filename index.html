@@ -18,6 +18,15 @@
     --crank-dark: #0f9488;
     --text: #f1f5f9;
     --text-dim: #94a3b8;
+    --board: #f8fafc;
+    --board-stroke: #cbd5e1;
+    --board-shadow: #94a3b8;
+    --post: #d4d9e0;
+    --post-stroke: #64748b;
+    --post-core: #b45309;
+    --lever: #b6bdc7;
+    --lever-dark: #6b7684;
+    --knob: #e8eaed;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -102,98 +111,148 @@
   </header>
   <main>
     <div id="circuitStage">
-      <svg viewBox="0 0 1400 620" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 1400 640" xmlns="http://www.w3.org/2000/svg">
+
+        <defs>
+          <linearGradient id="wireGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fde68a"/>
+            <stop offset="0.5" stop-color="var(--wire)"/>
+            <stop offset="1" stop-color="var(--wire-dark)"/>
+          </linearGradient>
+          <radialGradient id="bodyGrad" cx="35%" cy="30%" r="75%">
+            <stop offset="0" stop-color="#fef9c3"/>
+            <stop offset="0.55" stop-color="var(--body-yellow)"/>
+            <stop offset="1" stop-color="var(--body-yellow-dark)"/>
+          </radialGradient>
+          <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
+          </filter>
+
+          <!-- 재사용 심볼: 스프링 단자(구리 코일 + 은색 캡) -->
+          <g id="post">
+            <circle r="10" fill="var(--post)" stroke="var(--post-stroke)" stroke-width="2"/>
+            <circle r="4.5" fill="var(--post-core)"/>
+            <path d="M -7 -2 A 8 8 0 0 1 -1 -8" fill="none" stroke="#f0b978" stroke-width="1.5" opacity="0.8"/>
+          </g>
+
+          <!-- 재사용 심볼: 악어 클립 -->
+          <g id="clip-red">
+            <path d="M -20 0 L 8 -8 L 20 0 L 8 8 Z" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>
+            <path d="M 6 -9 L 6 9 M 12 -7 L 12 7 M 18 -4 L 18 4" stroke="#7f1d1d" stroke-width="1.5"/>
+          </g>
+          <g id="clip-black">
+            <path d="M -20 0 L 8 -8 L 20 0 L 8 8 Z" fill="#334155" stroke="#0f172a" stroke-width="1.5"/>
+            <path d="M 6 -9 L 6 9 M 12 -7 L 12 7 M 18 -4 L 18 4" stroke="#0f172a" stroke-width="1.5"/>
+          </g>
+        </defs>
 
         <!-- ============ 전선 (뒤에 깔림) ============ -->
-        <g id="wires">
-          <!-- A -> 위쪽 레일(스위치1/2 입력) -->
-          <path class="wire-outline" d="M 195 300 L 195 160 L 640 160" />
-          <path class="wire" d="M 195 300 L 195 160 L 640 160" />
-          <!-- A -> 아래쪽 레일(꼬마전구/버저 입력) -->
-          <path class="wire-outline" d="M 225 340 L 260 460 L 640 460" />
-          <path class="wire" d="M 225 340 L 260 460 L 640 460" />
+        <g id="wires" fill="none" stroke="url(#wireGrad)" stroke-width="7" stroke-linecap="round">
+          <!-- 짧은 인출선: 발전기 몸통 옆면 -> 클립 크림프 -->
+          <path d="M 120 290 C 100 300 82 308 68 316" />
+          <path d="M 120 345 C 100 358 84 368 69 375" />
+          <path d="M 1280 290 C 1300 300 1318 308 1332 320" />
+          <path d="M 1280 345 C 1300 358 1316 368 1331 385" />
 
-          <!-- 스위치1 -> 꼬마전구 -->
-          <path class="wire-outline" d="M 700 210 L 700 340" />
-          <path class="wire" d="M 700 210 L 700 340" />
-          <!-- 스위치2 -> 버저 -->
-          <path class="wire-outline" d="M 900 210 L 900 340" />
-          <path class="wire" d="M 900 210 L 900 340" />
+          <!-- 클립A(빨강) 조 -> 스위치1 좌측 단자 (위쪽 공용 레일) -->
+          <path d="M 108 320 C 250 240 450 200 650 205" />
+          <!-- 스위치1 좌측 -> 스위치2 좌측 (병렬 입력 공유 레일) -->
+          <path d="M 650 205 C 720 190 780 190 850 205" />
+          <!-- 스위치2 좌측 -> 클립B(빨강) 조 -->
+          <path d="M 850 205 C 1050 200 1150 240 1292 316" />
 
-          <!-- 위쪽 레일: 스위치1 -> 스위치2 (병렬 입력 공유) -->
-          <path class="wire-outline" d="M 640 160 L 960 160" />
-          <path class="wire" d="M 640 160 L 960 160" />
-          <!-- 아래쪽 레일: 꼬마전구 -> 버저 (병렬 출력 공유) -->
-          <path class="wire-outline" d="M 640 460 L 960 460" />
-          <path class="wire" d="M 640 460 L 960 460" />
+          <!-- 스위치1 우측 단자 -> 꼬마전구 좌측 단자 -->
+          <path d="M 750 210 C 745 260 715 300 665 335" />
+          <!-- 스위치2 우측 단자 -> 버저 좌측 단자 -->
+          <path d="M 950 210 C 955 260 925 300 875 335" />
 
-          <!-- 위쪽 레일 -> B -->
-          <path class="wire-outline" d="M 960 160 L 1175 160 L 1205 300" />
-          <path class="wire" d="M 960 160 L 1175 160 L 1205 300" />
-          <!-- 아래쪽 레일 -> B -->
-          <path class="wire-outline" d="M 960 460 L 1140 460 L 1140 340" />
-          <path class="wire" d="M 960 460 L 1140 460 L 1140 340" />
+          <!-- 클립A(검정) 조 -> 꼬마전구 우측 단자 (아래쪽 공용 레일, 보드 밑으로 처짐) -->
+          <path d="M 107 385 C 280 480 520 500 690 460 C 715 430 730 380 740 340" />
+          <!-- 꼬마전구 우측 -> 버저 우측 (아래쪽 공용 레일 계속, 처짐) -->
+          <path d="M 740 340 C 760 420 880 420 900 400 C 925 378 935 358 940 340" />
+          <!-- 버저 우측 -> 클립B(검정) 조 -->
+          <path d="M 940 340 C 955 380 970 430 985 460 C 1150 500 1250 480 1293 375" />
         </g>
 
+        <!-- ============ 클립 4개 (조: 회로 방향 / 크림프: 발전기 인출선) ============ -->
+        <use href="#clip-red" transform="translate(88,318) rotate(6)"/>
+        <use href="#clip-black" transform="translate(88,380) rotate(14)"/>
+        <use href="#clip-red" transform="translate(1312,318) rotate(186)"/>
+        <use href="#clip-black" transform="translate(1312,380) rotate(194)"/>
+
         <!-- ============ 손발전기 A ============ -->
-        <g id="genA">
-          <rect x="120" y="230" width="140" height="150" rx="28" fill="var(--body-yellow)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
-          <circle cx="190" cy="230" r="46" fill="var(--body-yellow)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
+        <g id="genA" filter="url(#softShadow)">
+          <rect x="120" y="230" width="140" height="150" rx="28" fill="url(#bodyGrad)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
+          <circle cx="190" cy="230" r="46" fill="url(#bodyGrad)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
           <g id="genA-crank" transform="rotate(-20 190 230)">
             <rect x="184" y="150" width="12" height="90" rx="6" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
             <circle cx="190" cy="150" r="14" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
           </g>
           <circle cx="190" cy="230" r="10" fill="var(--crank-dark)"/>
         </g>
-        <text class="label" x="190" y="415">손발전기 A</text>
-        <text class="sublabel" x="190" y="440">(에너지 투입)</text>
+        <text class="label" x="190" y="462">손발전기 A</text>
+        <text class="sublabel" x="190" y="487">(에너지 투입)</text>
 
         <!-- ============ 손발전기 B ============ -->
-        <g id="genB">
-          <rect x="1140" y="230" width="140" height="150" rx="28" fill="var(--body-yellow)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
-          <circle cx="1210" cy="230" r="46" fill="var(--body-yellow)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
+        <g id="genB" filter="url(#softShadow)">
+          <rect x="1140" y="230" width="140" height="150" rx="28" fill="url(#bodyGrad)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
+          <circle cx="1210" cy="230" r="46" fill="url(#bodyGrad)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
           <g id="genB-crank" transform="rotate(20 1210 230)">
             <rect x="1204" y="150" width="12" height="90" rx="6" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
             <circle cx="1210" cy="150" r="14" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
           </g>
           <circle cx="1210" cy="230" r="10" fill="var(--crank-dark)"/>
         </g>
-        <text class="label" x="1210" y="415">손발전기 B</text>
-        <text class="sublabel" x="1210" y="440">(측정 대상)</text>
+        <text class="label" x="1210" y="462">손발전기 B</text>
+        <text class="sublabel" x="1210" y="487">(측정 대상)</text>
 
         <!-- ============ 스위치 1 ============ -->
         <g id="switch1" data-closed="false">
-          <rect x="630" y="170" width="140" height="70" rx="10" fill="var(--panel)" stroke="#475569" stroke-width="2"/>
-          <circle cx="660" cy="205" r="8" fill="var(--metal)" stroke="var(--metal-dark)" stroke-width="2"/>
-          <circle cx="740" cy="205" r="8" fill="var(--metal)" stroke="var(--metal-dark)" stroke-width="2"/>
-          <line id="switch1-lever" x1="660" y1="205" x2="725" y2="180" stroke="var(--metal)" stroke-width="8" stroke-linecap="round"/>
+          <rect x="610" y="160" width="180" height="90" rx="14" fill="var(--board)" stroke="var(--board-stroke)" stroke-width="2" filter="url(#softShadow)"/>
+          <use href="#post" x="650" y="205"/>
+          <use href="#post" x="750" y="205"/>
+          <!-- 회전축 캡 -->
+          <circle cx="650" cy="205" r="6" fill="var(--lever-dark)"/>
+          <g id="switch1-lever" transform="rotate(-32 650 205)">
+            <rect x="650" y="200" width="86" height="10" rx="5" fill="var(--lever)" stroke="var(--lever-dark)" stroke-width="1.5"/>
+            <ellipse cx="736" cy="205" rx="12" ry="9" fill="var(--knob)" stroke="var(--lever-dark)" stroke-width="1.5"/>
+          </g>
         </g>
-        <text class="label" x="700" y="150">스위치 1</text>
+        <text class="label" x="700" y="145">스위치 1</text>
 
         <!-- ============ 스위치 2 ============ -->
         <g id="switch2" data-closed="false">
-          <rect x="830" y="170" width="140" height="70" rx="10" fill="var(--panel)" stroke="#475569" stroke-width="2"/>
-          <circle cx="860" cy="205" r="8" fill="var(--metal)" stroke="var(--metal-dark)" stroke-width="2"/>
-          <circle cx="940" cy="205" r="8" fill="var(--metal)" stroke="var(--metal-dark)" stroke-width="2"/>
-          <line id="switch2-lever" x1="860" y1="205" x2="925" y2="180" stroke="var(--metal)" stroke-width="8" stroke-linecap="round"/>
+          <rect x="810" y="160" width="180" height="90" rx="14" fill="var(--board)" stroke="var(--board-stroke)" stroke-width="2" filter="url(#softShadow)"/>
+          <use href="#post" x="850" y="205"/>
+          <use href="#post" x="950" y="205"/>
+          <circle cx="850" cy="205" r="6" fill="var(--lever-dark)"/>
+          <g id="switch2-lever" transform="rotate(-32 850 205)">
+            <rect x="850" y="200" width="86" height="10" rx="5" fill="var(--lever)" stroke="var(--lever-dark)" stroke-width="1.5"/>
+            <ellipse cx="936" cy="205" rx="12" ry="9" fill="var(--knob)" stroke="var(--lever-dark)" stroke-width="1.5"/>
+          </g>
         </g>
-        <text class="label" x="900" y="150">스위치 2</text>
+        <text class="label" x="900" y="145">스위치 2</text>
 
         <!-- ============ 꼬마전구 ============ -->
         <g id="bulb">
-          <rect x="660" y="335" width="80" height="20" rx="4" fill="var(--panel)" stroke="#475569" stroke-width="2"/>
-          <circle id="bulb-glass" cx="700" cy="380" r="38" fill="#334155" stroke="#64748b" stroke-width="3"/>
-          <path d="M 685 368 Q 700 358 715 368 M 685 392 Q 700 402 715 392" stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <rect x="630" y="330" width="140" height="95" rx="14" fill="var(--board)" stroke="var(--board-stroke)" stroke-width="2" filter="url(#softShadow)"/>
+          <use href="#post" x="660" y="340"/>
+          <use href="#post" x="740" y="340"/>
+          <rect x="691" y="345" width="18" height="16" fill="var(--post-stroke)"/>
+          <circle id="bulb-glass" cx="700" cy="393" r="30" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3"/>
+          <path d="M 688 383 Q 700 373 712 383 M 688 403 Q 700 413 712 403" stroke="#64748b" stroke-width="3" fill="none" stroke-linecap="round"/>
         </g>
         <text class="label" x="700" y="450">꼬마전구</text>
 
         <!-- ============ 버저 ============ -->
         <g id="buzzer">
-          <rect x="860" y="335" width="80" height="20" rx="4" fill="var(--panel)" stroke="#475569" stroke-width="2"/>
-          <rect id="buzzer-body" x="862" y="355" width="76" height="55" rx="10" fill="#334155" stroke="#64748b" stroke-width="3"/>
-          <line x1="880" y1="370" x2="880" y2="395" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
-          <line x1="900" y1="365" x2="900" y2="400" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
-          <line x1="920" y1="370" x2="920" y2="395" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+          <rect x="830" y="330" width="140" height="95" rx="14" fill="var(--board)" stroke="var(--board-stroke)" stroke-width="2" filter="url(#softShadow)"/>
+          <use href="#post" x="860" y="340"/>
+          <use href="#post" x="940" y="340"/>
+          <rect id="buzzer-body" x="866" y="352" width="68" height="52" rx="8" fill="#334155" stroke="#1e293b" stroke-width="3"/>
+          <circle cx="900" cy="378" r="18" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+          <circle cx="900" cy="378" r="10" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+          <circle cx="900" cy="378" r="3" fill="#94a3b8"/>
         </g>
         <text class="label" x="900" y="450">버저</text>
 
