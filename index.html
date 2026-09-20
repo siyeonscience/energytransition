@@ -977,7 +977,7 @@
         <div class="sub">[1~2] 그림과 같이 실험 장치를 꾸미고 스위치 1, 2를 열거나 닫으면서 손발전기 A의 손잡이를 돌렸다.</div>
         <img src="circuit-photo.webp" alt="손발전기 A와 B, 스위치 1·2, 꼬마전구, 버저가 전선으로 연결된 실험 장치 사진" class="quiz-photo">
         <div id="quizContainer"></div>
-        <div id="quizNudge" class="sub" style="text-align:center;">두 문제를 모두 풀면 다음으로 이동할 수 있어요</div>
+        <div id="quizNudge" class="sub" style="text-align:center;">두 문제 모두 정답을 고르고 해설의 빈칸까지 채워야 다음으로 이동할 수 있어요</div>
         <div class="btn-row">
           <button class="primary-btn" id="toSummaryBtn" type="button" disabled>다음: 결과 보기 →</button>
         </div>
@@ -1581,6 +1581,198 @@
   setTutorialStep('wires');
 
   /* ============================================================
+     빈칸 채우기 공용 위젯 (정리하기 화면 + 확인 문제 해설에서 재사용)
+     - 정답인 칸은 잠기고(다시 못 바꿈), 틀린 칸은 계속 다른 낱말로
+       다시 시도할 수 있다 - 맞을 때까지.
+     ============================================================ */
+  // 단어 칩을 드래그해서 빈칸에 놓기(짧게 탭만 하면 비어있는 첫 빈칸에 채워짐).
+  // 잠긴(이미 정답인) 칸에는 놓을 수 없다.
+  function attachChipDrag(chip, word, sentenceDiv, state, fillBlank) {
+    chip.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      var startX = e.clientX, startY = e.clientY;
+      var pointerId = e.pointerId;
+      var dragging = false;
+      var ghost = null;
+      var hoveredBlank = null;
+
+      function blankUnderPoint(x, y) {
+        var el = document.elementFromPoint(x, y);
+        var blank = el && el.closest ? el.closest('.blank') : null;
+        if (!blank || !sentenceDiv.contains(blank)) return null;
+        return state.locked[Number(blank.dataset.index)] ? null : blank;
+      }
+
+      function cleanup() {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+        chip.classList.remove('dragging-source');
+        if (ghost) { ghost.remove(); ghost = null; }
+        if (hoveredBlank) { hoveredBlank.classList.remove('drop-hover'); hoveredBlank = null; }
+      }
+
+      function onMove(ev) {
+        if (ev.pointerId !== pointerId) return;
+        var dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if (!dragging && Math.sqrt(dx * dx + dy * dy) > 6) {
+          dragging = true;
+          chip.classList.add('dragging-source');
+          ghost = document.createElement('div');
+          ghost.className = 'word-chip drag-ghost';
+          ghost.textContent = word;
+          document.body.appendChild(ghost);
+        }
+        if (!dragging) return;
+        if (ghost) ghost.style.transform = 'translate(' + (ev.clientX - ghost.offsetWidth / 2) + 'px,' + (ev.clientY - ghost.offsetHeight / 2) + 'px)';
+        var blank = blankUnderPoint(ev.clientX, ev.clientY);
+        if (blank !== hoveredBlank) {
+          if (hoveredBlank) hoveredBlank.classList.remove('drop-hover');
+          hoveredBlank = blank;
+          if (hoveredBlank) hoveredBlank.classList.add('drop-hover');
+        }
+      }
+
+      function onUp(ev) {
+        if (ev.pointerId !== pointerId) return;
+        if (dragging) {
+          var blank = blankUnderPoint(ev.clientX, ev.clientY);
+          if (blank) fillBlank(Number(blank.dataset.index), word);
+        } else {
+          for (var i = 0; i < state.filled.length; i++) {
+            if (!state.locked[i] && state.filled[i] == null) { fillBlank(i, word); break; }
+          }
+        }
+        cleanup();
+      }
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+    });
+  }
+
+  // parts: 문자열과 {blank:true, answer, group?} 를 섞은 배열. 문자열 안의 '\n'은 줄바꿈으로 렌더링된다.
+  function createBlankFiller(parts, wordBank, onChange) {
+    var blankDefs = parts.filter(function (p) { return typeof p !== 'string'; });
+    var state = { filled: new Array(blankDefs.length).fill(null), locked: new Array(blankDefs.length).fill(false), submitted: false };
+    var sentenceDiv;
+
+    function fillBlank(idx, word) {
+      if (state.locked[idx]) return;
+      state.filled[idx] = word;
+      var span = sentenceDiv.querySelector('.blank[data-index="' + idx + '"]');
+      span.textContent = word;
+      span.classList.remove('correct', 'incorrect');
+      span.classList.add('filled');
+      if (onChange) onChange();
+    }
+
+    function render(container) {
+      container.innerHTML = '';
+      sentenceDiv = document.createElement('div');
+      sentenceDiv.className = 'fill-sentence';
+      var blankIndex = 0;
+      parts.forEach(function (part) {
+        if (typeof part === 'string') {
+          part.split('\n').forEach(function (seg, si) {
+            if (si > 0) sentenceDiv.appendChild(document.createElement('br'));
+            sentenceDiv.appendChild(document.createTextNode(seg));
+          });
+          return;
+        }
+        var idx = blankIndex++;
+        var span = document.createElement('span');
+        span.className = 'blank';
+        span.textContent = '____';
+        span.dataset.index = idx;
+        span.addEventListener('click', function () {
+          if (state.locked[idx] || state.filled[idx] == null) return;
+          state.filled[idx] = null;
+          span.textContent = '____';
+          span.classList.remove('filled', 'incorrect', 'correct');
+          if (onChange) onChange();
+        });
+        sentenceDiv.appendChild(span);
+      });
+      container.appendChild(sentenceDiv);
+
+      var bankDiv = document.createElement('div');
+      bankDiv.className = 'word-bank';
+      wordBank.forEach(function (word) {
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'word-chip';
+        chip.textContent = word;
+        attachChipDrag(chip, word, sentenceDiv, state, fillBlank);
+        bankDiv.appendChild(chip);
+      });
+      container.appendChild(bankDiv);
+    }
+
+    // 아직 안 맞은 칸만 채점한다: 맞으면 잠그고, 틀리면 다시 시도할 수 있게 그대로 둔다.
+    function check() {
+      var correctFlags = blankDefs.map(function () { return false; });
+      var groups = {};
+      blankDefs.forEach(function (def, i) {
+        if (def.group) { groups[def.group] = groups[def.group] || []; groups[def.group].push(i); }
+        else correctFlags[i] = state.filled[i] === def.answer;
+      });
+      // 순서가 바뀌어도 되는 빈칸 묶음(예: 빛/소리)은 정답 낱말의 '집합'만 맞으면 정답 처리
+      Object.keys(groups).forEach(function (g) {
+        var idxs = groups[g];
+        var expected = idxs.map(function (i) { return blankDefs[i].answer; }).slice().sort();
+        var actual = idxs.map(function (i) { return state.filled[i]; }).slice().sort();
+        var ok = JSON.stringify(expected) === JSON.stringify(actual);
+        idxs.forEach(function (i) { correctFlags[i] = ok; });
+      });
+      var blanks = sentenceDiv.querySelectorAll('.blank');
+      blanks.forEach(function (span, i) {
+        if (state.locked[i]) return;
+        span.classList.remove('filled');
+        if (correctFlags[i]) { span.classList.add('correct'); state.locked[i] = true; }
+        else span.classList.add('incorrect');
+      });
+      state.submitted = true;
+    }
+
+    function restore(saved) {
+      if (!saved) return;
+      state.filled = saved.filled.slice();
+      state.locked = saved.locked ? saved.locked.slice() : state.locked;
+      state.submitted = !!saved.submitted;
+      var blanks = sentenceDiv.querySelectorAll('.blank');
+      blanks.forEach(function (span, i) {
+        if (state.filled[i] == null) return;
+        span.textContent = state.filled[i];
+        if (state.locked[i]) span.classList.add('correct');
+        else if (state.submitted) span.classList.add('incorrect');
+        else span.classList.add('filled');
+      });
+    }
+
+    function isAllFilledOrLocked() { return state.filled.every(function (w, i) { return state.locked[i] || w != null; }); }
+    function isAllLocked() { return state.locked.every(Boolean); }
+    function reconstructText() {
+      var blankIndex = 0, text = '';
+      parts.forEach(function (part) {
+        if (typeof part === 'string') { text += part.replace(/\n/g, ' '); return; }
+        text += (state.filled[blankIndex] || '＿＿');
+        blankIndex++;
+      });
+      return text;
+    }
+
+    return {
+      state: state, render: render, check: check, restore: restore,
+      isAllFilledOrLocked: isAllFilledOrLocked, isAllLocked: isAllLocked,
+      reconstructText: reconstructText,
+      correctCount: function () { return state.locked.filter(Boolean).length; },
+      total: function () { return blankDefs.length; }
+    };
+  }
+
+  /* ============================================================
      정리하기: 빈칸 채우기
      ============================================================ */
   var reflectData = {
@@ -1604,205 +1796,45 @@
     }
   };
 
-  var reflectState = {
-    1: { filled: [], submitted: false, correctCount: 0, total: 0 },
-    2: { filled: [], submitted: false, correctCount: 0, total: 0 }
-  };
+  var reflectFillers = {};
 
-  function updateSubmitEnabled(qid) {
-    var state = reflectState[qid];
-    document.getElementById('reflect' + qid + 'Submit').disabled = state.filled.some(function (w) { return w == null; });
+  function refreshReflectSubmit(qid) {
+    var filler = reflectFillers[qid];
+    document.getElementById('reflect' + qid + 'Submit').disabled = !filler.isAllFilledOrLocked() || filler.isAllLocked();
   }
 
-  function renderReflect(qid) {
-    var data = reflectData[qid];
-    var container = document.getElementById('reflect' + qid + 'Container');
-    container.innerHTML = '';
-    var state = reflectState[qid];
-    var blankCount = data.parts.filter(function (p) { return typeof p !== 'string'; }).length;
-    state.filled = new Array(blankCount).fill(null);
-    state.submitted = false;
-
-    var sentenceDiv = document.createElement('div');
-    sentenceDiv.className = 'fill-sentence';
-    var blankIndex = 0;
-    data.parts.forEach(function (part) {
-      if (typeof part === 'string') {
-        sentenceDiv.appendChild(document.createTextNode(part));
-        return;
-      }
-      var idx = blankIndex++;
-      var span = document.createElement('span');
-      span.className = 'blank';
-      span.textContent = '____';
-      span.dataset.index = idx;
-      span.addEventListener('click', function () {
-        if (state.submitted || state.filled[idx] == null) return;
-        state.filled[idx] = null;
-        span.textContent = '____';
-        span.classList.remove('filled');
-        updateSubmitEnabled(qid);
-      });
-      sentenceDiv.appendChild(span);
-    });
-    container.appendChild(sentenceDiv);
-
-    var bankDiv = document.createElement('div');
-    bankDiv.className = 'word-bank';
-    data.wordBank.forEach(function (word) {
-      var chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'word-chip';
-      chip.textContent = word;
-      attachChipDrag(chip, word, sentenceDiv, qid);
-      bankDiv.appendChild(chip);
-    });
-    container.appendChild(bankDiv);
-
-    updateSubmitEnabled(qid);
-  }
-
-  // 단어 칩을 드래그해서 빈칸에 놓기(짧게 탭만 하면 비어있는 첫 빈칸에 채워짐)
-  function attachChipDrag(chip, word, sentenceDiv, qid) {
-    chip.addEventListener('pointerdown', function (e) {
-      var state = reflectState[qid];
-      if (state.submitted) return;
-      e.preventDefault();
-      var startX = e.clientX, startY = e.clientY;
-      var pointerId = e.pointerId;
-      var dragging = false;
-      var ghost = null;
-      var hoveredBlank = null;
-
-      function moveGhost(x, y) {
-        if (!ghost) return;
-        ghost.style.transform = 'translate(' + (x - ghost.offsetWidth / 2) + 'px,' + (y - ghost.offsetHeight / 2) + 'px)';
-      }
-
-      function fillBlank(idx) {
-        state.filled[idx] = word;
-        var span = sentenceDiv.querySelector('.blank[data-index="' + idx + '"]');
-        span.textContent = word;
-        span.classList.remove('correct', 'incorrect');
-        span.classList.add('filled');
-        updateSubmitEnabled(qid);
-      }
-
-      function cleanup() {
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-        window.removeEventListener('pointercancel', onUp);
-        chip.classList.remove('dragging-source');
-        if (ghost) { ghost.remove(); ghost = null; }
-        if (hoveredBlank) { hoveredBlank.classList.remove('drop-hover'); hoveredBlank = null; }
-      }
-
-      function blankUnderPoint(x, y) {
-        var el = document.elementFromPoint(x, y);
-        var blank = el && el.closest ? el.closest('.blank') : null;
-        return (blank && sentenceDiv.contains(blank) && !state.submitted) ? blank : null;
-      }
-
-      function onMove(ev) {
-        if (ev.pointerId !== pointerId) return;
-        var dx = ev.clientX - startX, dy = ev.clientY - startY;
-        if (!dragging && Math.sqrt(dx * dx + dy * dy) > 6) {
-          dragging = true;
-          chip.classList.add('dragging-source');
-          ghost = document.createElement('div');
-          ghost.className = 'word-chip drag-ghost';
-          ghost.textContent = word;
-          document.body.appendChild(ghost);
-        }
-        if (!dragging) return;
-        moveGhost(ev.clientX, ev.clientY);
-        var blank = blankUnderPoint(ev.clientX, ev.clientY);
-        if (blank !== hoveredBlank) {
-          if (hoveredBlank) hoveredBlank.classList.remove('drop-hover');
-          hoveredBlank = blank;
-          if (hoveredBlank) hoveredBlank.classList.add('drop-hover');
-        }
-      }
-
-      function onUp(ev) {
-        if (ev.pointerId !== pointerId) return;
-        if (dragging) {
-          var blank = blankUnderPoint(ev.clientX, ev.clientY);
-          if (blank) fillBlank(Number(blank.dataset.index));
-        } else if (!state.submitted) {
-          for (var i = 0; i < state.filled.length; i++) {
-            if (state.filled[i] == null) { fillBlank(i); break; }
-          }
-        }
-        cleanup();
-      }
-
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-      window.addEventListener('pointercancel', onUp);
-    });
-  }
-
-  function gradeReflect(qid) {
-    var data = reflectData[qid];
-    var state = reflectState[qid];
-    var blankDefs = data.parts.filter(function (p) { return typeof p !== 'string'; });
-    var blanks = document.getElementById('reflect' + qid + 'Container').querySelectorAll('.blank');
-
-    var correctFlags = blankDefs.map(function () { return false; });
-    var groups = {};
-    blankDefs.forEach(function (def, i) {
-      if (def.group) {
-        groups[def.group] = groups[def.group] || [];
-        groups[def.group].push(i);
-      } else {
-        correctFlags[i] = state.filled[i] === def.answer;
-      }
-    });
-    // 순서가 바뀌어도 되는 빈칸 묶음(예: 빛/소리)은 정답 낱말의 '집합'만 맞으면 정답 처리
-    Object.keys(groups).forEach(function (g) {
-      var idxs = groups[g];
-      var expected = idxs.map(function (i) { return blankDefs[i].answer; }).slice().sort();
-      var actual = idxs.map(function (i) { return state.filled[i]; }).slice().sort();
-      var ok = JSON.stringify(expected) === JSON.stringify(actual);
-      idxs.forEach(function (i) { correctFlags[i] = ok; });
-    });
-
-    blanks.forEach(function (span, i) {
-      span.classList.remove('filled');
-      span.classList.add(correctFlags[i] ? 'correct' : 'incorrect');
-    });
-
-    state.submitted = true;
-    state.correctCount = correctFlags.filter(Boolean).length;
-    state.total = correctFlags.length;
-  }
-
-  function reflectSummaryText(qid) {
-    var state = reflectState[qid];
-    if (!state.submitted) return '응답하지 않음';
-    var data = reflectData[qid];
-    var blankIndex = 0;
-    var text = '';
-    data.parts.forEach(function (part) {
-      if (typeof part === 'string') { text += part; return; }
-      text += (state.filled[blankIndex] || '＿＿');
-      blankIndex++;
-    });
-    return text + ' — ' + state.correctCount + '/' + state.total + '칸 정답';
-  }
-
-  function wireReflect(qid) {
-    renderReflect(qid);
-    var submitBtn = document.getElementById('reflect' + qid + 'Submit');
-    submitBtn.addEventListener('click', function () {
-      gradeReflect(qid);
-      submitBtn.disabled = true;
+  // 필러를 새로 만들어 다시 그린다(처음 진입 시 + "처음부터 다시"로 리셋할 때 재사용).
+  function resetReflect(qid) {
+    var filler = createBlankFiller(reflectData[qid].parts, reflectData[qid].wordBank, function () {
+      refreshReflectSubmit(qid);
       saveState();
     });
+    filler.render(document.getElementById('reflect' + qid + 'Container'));
+    reflectFillers[qid] = filler;
+    refreshReflectSubmit(qid);
+  }
+
+  // 제출 버튼 클릭 리스너는 한 번만 붙이고, 클릭 시점의 최신 필러를 조회한다 -
+  // 리셋할 때마다 새로 붙이면 예전 필러를 가리키는 리스너가 계속 쌓이기 때문.
+  function wireReflect(qid) {
+    var submitBtn = document.getElementById('reflect' + qid + 'Submit');
+    submitBtn.textContent = '채점하기';
+    submitBtn.addEventListener('click', function () {
+      reflectFillers[qid].check();
+      refreshReflectSubmit(qid);
+      saveState();
+    });
+    resetReflect(qid);
   }
   wireReflect(1);
   wireReflect(2);
+
+  function reflectSummaryText(qid) {
+    var filler = reflectFillers[qid];
+    if (!filler.state.submitted) return '응답하지 않음';
+    return filler.reconstructText() + ' — ' + filler.correctCount() + '/' + filler.total() + '칸 정답' +
+      (filler.isAllLocked() ? ' (완료)' : '');
+  }
 
   /* ============================================================
      확인 문제
@@ -1817,11 +1849,15 @@
       ],
       choices: ['① ㄱ', '② ㄷ', '③ ㄱ, ㄴ', '④ ㄴ, ㄷ', '⑤ ㄱ, ㄴ, ㄷ'],
       correctIndex: 3,
-      explain: [
-        'ㄱ. 꼬마전구에서는 전기 에너지가 빛에너지로 전환된다 (방향이 반대이므로 틀린 설명).',
-        'ㄴ. 버저에서 전기 에너지가 소리 에너지로 전환된다 (옳은 설명).',
-        'ㄷ. 손발전기 A에서 역학적 에너지가 전기 에너지로 전환된다 (옳은 설명).'
-      ]
+      explainParts: [
+        'ㄱ. 꼬마전구에서 ', { blank: true, answer: '전기' }, ' 에너지가 ', { blank: true, answer: '빛' },
+        ' 에너지로 전환된다 (방향이 반대이므로 틀린 설명).\n',
+        'ㄴ. 버저에서 ', { blank: true, answer: '전기' }, ' 에너지가 ', { blank: true, answer: '소리' },
+        ' 에너지로 전환된다 (옳은 설명).\n',
+        'ㄷ. 손발전기 A에서 ', { blank: true, answer: '역학적' }, ' 에너지가 ', { blank: true, answer: '전기' },
+        ' 에너지로 전환된다 (옳은 설명).'
+      ],
+      explainWordBank: ['전기', '빛', '소리', '역학적', '화학적']
     },
     {
       stem: '2. 이 실험에 관한 설명으로 옳은 것만을 보기에서 있는 대로 고른 것은?',
@@ -1832,20 +1868,26 @@
       ],
       choices: ['① ㄱ', '② ㄷ', '③ ㄱ, ㄴ', '④ ㄴ, ㄷ', '⑤ ㄱ, ㄴ, ㄷ'],
       correctIndex: 1,
-      explain: [
-        'ㄱ. 손발전기 B에서는 손발전기 A로부터 온 전기 에너지가 역학적 에너지로 전환되며, 이때 전자기 유도 현상은 일어나지 않는다 (틀린 설명).',
-        'ㄴ, ㄷ. 닫은 스위치의 수가 많을수록 전환되는 에너지의 종류가 많아져 B의 손잡이가 돌아가는 빠르기가 느려진다 — 에너지는 소멸되는 것이 아니라 전환되는 것이므로 ㄴ은 틀리고, B가 더 느리게 도는 ㄷ이 옳은 설명이다.'
-      ]
+      explainParts: [
+        'ㄱ. 손발전기 B에서는 손발전기 A로부터 온 ', { blank: true, answer: '전기' }, ' 에너지가 ', { blank: true, answer: '역학적' },
+        ' 에너지로 전환되며, 이때 전자기 유도 현상은 일어나지 않는다 (틀린 설명).\n',
+        'ㄴ, ㄷ. 닫은 스위치의 수가 많을수록 전환되는 에너지의 종류가 많아져 B의 손잡이가 돌아가는 빠르기가 느려진다 — 에너지는 ',
+        { blank: true, answer: '소멸' }, '되는 것이 아니라 ', { blank: true, answer: '전환' },
+        '되는 것이므로 ㄴ은 틀리고, ㄷ이 옳은 설명이다.'
+      ],
+      explainWordBank: ['전기', '역학적', '소멸', '전환', '빛']
     }
   ];
 
   var quizAnswers = [null, null];
+  var quizExplainCheckers = [];
   var quizContainer = document.getElementById('quizContainer');
   var toSummaryBtn = document.getElementById('toSummaryBtn');
   var quizNudge = document.getElementById('quizNudge');
 
   function renderQuiz() {
     quizContainer.innerHTML = '';
+    quizExplainCheckers = [];
     quizData.forEach(function (q, qi) {
       var qDiv = document.createElement('div');
       qDiv.className = 'quiz-q';
@@ -1888,9 +1930,36 @@
       });
       qDiv.appendChild(choicesDiv);
 
+      // 답을 맞혔든 아니든, 해설의 빈칸을 채워야 다음으로 넘어갈 수 있다 -
+      // 찍고 넘어가지 못하도록 해설을 실제로 읽게 만드는 장치.
       var explainDiv = document.createElement('div');
       explainDiv.className = 'quiz-explain';
-      explainDiv.innerHTML = '<b>해설</b><br>' + q.explain.join('<br>');
+      var explainHeading = document.createElement('b');
+      explainHeading.textContent = '해설의 빈칸을 채워보세요';
+      explainDiv.appendChild(explainHeading);
+      var explainFillContainer = document.createElement('div');
+      explainFillContainer.style.marginTop = '8px';
+      explainDiv.appendChild(explainFillContainer);
+      var explainCheckBtn = document.createElement('button');
+      explainCheckBtn.type = 'button';
+      explainCheckBtn.className = 'secondary-btn';
+      explainCheckBtn.textContent = '확인하기';
+      explainCheckBtn.style.marginTop = '10px';
+      explainCheckBtn.disabled = true;
+
+      var checker = createBlankFiller(q.explainParts, q.explainWordBank, function () {
+        explainCheckBtn.disabled = !checker.isAllFilledOrLocked() || checker.isAllLocked();
+        saveState();
+      });
+      checker.render(explainFillContainer);
+      quizExplainCheckers[qi] = checker;
+      explainCheckBtn.addEventListener('click', function () {
+        checker.check();
+        explainCheckBtn.disabled = !checker.isAllFilledOrLocked() || checker.isAllLocked();
+        checkQuizComplete();
+        saveState();
+      });
+      explainDiv.appendChild(explainCheckBtn);
       qDiv.appendChild(explainDiv);
 
       quizContainer.appendChild(qDiv);
@@ -1898,8 +1967,12 @@
   }
 
   function checkQuizComplete() {
-    var done = quizAnswers.every(function (a) { return a != null; });
+    var answered = quizAnswers.every(function (a) { return a != null; });
+    var explained = quizExplainCheckers.length === quizData.length &&
+      quizExplainCheckers.every(function (c) { return c.isAllLocked(); });
+    var done = answered && explained;
     toSummaryBtn.disabled = !done;
+    quizNudge.textContent = '두 문제 모두 정답을 고르고 해설의 빈칸까지 채워야 다음으로 이동할 수 있어요';
     quizNudge.style.display = done ? 'none' : '';
   }
 
@@ -2084,10 +2157,8 @@
     clearState();
     records['00'] = records['10'] = records['01'] = records['11'] = null;
     quizAnswers = [null, null];
-    renderReflect(1);
-    document.getElementById('reflect1Submit').disabled = true;
-    renderReflect(2);
-    document.getElementById('reflect2Submit').disabled = true;
+    resetReflect(1);
+    resetReflect(2);
     renderQuiz();
     checkQuizComplete();
     toSummaryBtn.disabled = true;
@@ -2133,8 +2204,9 @@
         circuitConnected: circuitConnected,
         connectedLegs: connectedLegs,
         tutorialStep: tutorialStep,
-        reflectState: reflectState,
+        reflectState: { 1: reflectFillers[1].state, 2: reflectFillers[2].state },
         quizAnswers: quizAnswers,
+        quizExplainState: quizExplainCheckers.map(function (c) { return c.state; }),
         studentName: studentNameInput.value
       }));
     } catch (e) { /* localStorage를 못 쓰는 환경이면 조용히 무시 */ }
@@ -2187,18 +2259,9 @@
       [1, 2].forEach(function (qid) {
         var savedQ = saved.reflectState[qid];
         if (!savedQ) return;
-        renderReflect(qid);
-        savedQ.filled.forEach(function (word, idx) {
-          if (word == null) return;
-          reflectState[qid].filled[idx] = word;
-          var span = document.querySelector('#reflect' + qid + 'Container .blank[data-index="' + idx + '"]');
-          if (span) { span.textContent = word; span.classList.add('filled'); }
-        });
-        updateSubmitEnabled(qid);
-        if (savedQ.submitted) {
-          gradeReflect(qid);
-          document.getElementById('reflect' + qid + 'Submit').disabled = true;
-        }
+        resetReflect(qid);
+        reflectFillers[qid].restore(savedQ);
+        refreshReflectSubmit(qid);
       });
     }
 
@@ -2222,6 +2285,16 @@
         stemDiv.appendChild(tag);
         explainDiv.classList.add('show');
       });
+      if (saved.quizExplainState) {
+        saved.quizExplainState.forEach(function (s, qi) {
+          if (s && quizExplainCheckers[qi]) {
+            quizExplainCheckers[qi].restore(s);
+            var qDiv = quizContainer.children[qi];
+            var btn = qDiv.querySelector('.quiz-explain .secondary-btn');
+            if (btn) btn.disabled = !quizExplainCheckers[qi].isAllFilledOrLocked() || quizExplainCheckers[qi].isAllLocked();
+          }
+        });
+      }
       checkQuizComplete();
     }
 
