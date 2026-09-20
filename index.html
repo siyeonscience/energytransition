@@ -50,7 +50,7 @@
   }
   header {
     flex: 0 0 auto;
-    padding: 10px 24px;
+    padding: 7px 24px;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -212,8 +212,8 @@
     flex-wrap: wrap;
   }
 
-  /* ---------- 실험하기 화면 ---------- */
-  #screen-experiment { flex-direction: column; }
+  /* ---------- 실험하기 화면 (태블릿 한 화면에 스크롤 없이 들어가야 함) ---------- */
+  #screen-experiment { flex-direction: column; overflow: hidden; }
 
   #tutorialBanner {
     flex: 0 0 auto;
@@ -221,12 +221,12 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 12px 20px;
-    margin: 10px 24px 0;
-    border-radius: 12px;
+    padding: 7px 18px;
+    margin: 6px 20px 0;
+    border-radius: 10px;
     background: #0f9488;
     color: #fff;
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     text-align: center;
   }
@@ -244,8 +244,8 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px;
-    min-height: 320px;
+    padding: 4px 12px;
+    min-height: 0;
   }
   #circuitStage {
     width: 100%;
@@ -350,22 +350,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 32px;
-    padding: 10px 24px;
+    gap: 22px;
+    padding: 4px 24px;
   }
-  .readout { text-align: center; min-width: 150px; }
+  .readout { text-align: center; min-width: 130px; }
   .readout .value {
-    font-size: 26px;
+    font-size: 21px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    line-height: 1.2;
   }
   .readout .caption {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-dim);
-    margin-top: 2px;
+    margin-top: 0;
   }
-  #resetBtn { min-height: 48px; padding: 0 20px; border-radius: 10px; border: 1px solid #475569; background: var(--panel); color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; }
+  #resetBtn { min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #475569; background: var(--panel); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; }
   #resetBtn:active { background: #334155; }
+  footer .secondary-btn { min-height: 44px; padding: 0 16px; font-size: 14px; }
 
   .switch-hit { cursor: pointer; }
   .switch-hit.locked { cursor: not-allowed; opacity: 0.55; }
@@ -382,30 +384,32 @@
 
   #recordPanel {
     flex: 0 0 auto;
-    padding: 10px 24px 18px;
+    padding: 2px 24px 8px;
     border-top: 1px solid #334155;
   }
   table.recordTable {
     width: 100%;
-    max-width: 760px;
-    margin: 0 auto 12px;
+    max-width: 720px;
+    margin: 0 auto 6px;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 13px;
   }
   table.recordTable th, table.recordTable td {
     border: 1px solid #334155;
-    padding: 8px 6px;
+    padding: 4px 6px;
     text-align: center;
   }
   table.recordTable th {
     background: #1e293b;
     color: var(--text-dim);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
   }
   table.recordTable td { font-variant-numeric: tabular-nums; font-weight: 700; }
-  #recordProgress { text-align: center; font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
+  #recordProgress { text-align: center; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
   #recordProgress.complete { color: #34d399; font-weight: 700; }
+  #recordPanel .btn-row { margin-top: 4px; }
+  #recordPanel .primary-btn { min-height: 42px; font-size: 14px; padding: 0 20px; }
 
   /* ---------- 정리하기 / 퀴즈 공통 ---------- */
   .fill-sentence {
@@ -434,6 +438,7 @@
   }
   .blank.correct { border-color: #22c55e; background: #14532d; color: #fff; cursor: default; }
   .blank.incorrect { border-color: #ef4444; background: #4c1d1d; color: #fff; cursor: default; }
+  .blank.drop-hover { border-color: #fbbf24; background: #3a2f0f; }
   .word-bank {
     display: flex;
     flex-wrap: wrap;
@@ -449,31 +454,20 @@
     color: var(--text);
     font-size: 15px;
     font-weight: 600;
-    cursor: pointer;
+    cursor: grab;
+    touch-action: none;
   }
   .word-chip:active { background: #334155; }
-  .model-answer {
-    margin-top: 12px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    background: #0f2f2b;
-    border: 1px solid #14532d;
-    font-size: 14.5px;
-    line-height: 1.6;
-    display: none;
-  }
-  .model-answer.show { display: block; }
-  .model-answer .tag {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 700;
-    color: #4ade80;
-    margin-bottom: 6px;
-  }
-  .model-answer .guide {
-    margin-top: 8px;
-    color: var(--text-dim);
-    font-size: 13.5px;
+  .word-chip.dragging-source { opacity: 0.35; }
+  .word-chip.drag-ghost {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.95;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+    cursor: grabbing;
   }
 
   .flow-diagram {
@@ -567,7 +561,7 @@
     .screen:not(#screen-summary) { display: none !important; }
     .card { border-color: #999; background: #fafafa; }
     table.recordTable th, table.recordTable td { border-color: #999; color: #000; }
-    .model-answer, .quiz-explain { background: #f4f4f4; border-color: #999; color: #000; display: block !important; }
+    .quiz-explain { background: #f4f4f4; border-color: #999; color: #000; display: block !important; }
   }
 </style>
 </head>
@@ -915,11 +909,6 @@
           <div class="btn-row" style="justify-content:flex-start;margin-top:4px;">
             <button class="secondary-btn" id="reflect1Submit" type="button">제출</button>
           </div>
-          <div class="model-answer" id="reflect1Answer">
-            <span class="tag">정답 문장</span>
-            <div>손발전기 A에서 손잡이를 돌리는 역학적 에너지는 전기 에너지로 전환된 후, 이 전기 에너지는 다시 손발전기 B의 손잡이를 돌리는 역학적 에너지로 전환된다.</div>
-            <div class="guide">길잡이: 손발전기에 들어 있는 발전기는 전동기와 같다는 것을 학생들에게 알리면 에너지 전환 과정을 좀 더 쉽게 설명할 수 있다.</div>
-          </div>
         </div>
 
         <div class="card">
@@ -927,10 +916,6 @@
           <div id="reflect2Container"></div>
           <div class="btn-row" style="justify-content:flex-start;margin-top:4px;">
             <button class="secondary-btn" id="reflect2Submit" type="button">제출</button>
-          </div>
-          <div class="model-answer" id="reflect2Answer">
-            <span class="tag">정답 문장</span>
-            <div>손발전기 A에서 전환된 전기 에너지가 꼬마전구나 버저에서 빛 또는 소리 에너지로 전환되고, 남은 전기 에너지가 손발전기 B의 손잡이의 역학적 에너지로 전환되기 때문이다.</div>
           </div>
         </div>
 
@@ -1141,28 +1126,41 @@
   var recordProgress = document.getElementById('recordProgress');
 
   /* ============================================================
-     첫 실행 가이드 튜토리얼: 전선 연결 -> A 크랭크 -> 스위치1 -> 크랭크 -> 스위치2 -> 크랭크
+     첫 실행 가이드 튜토리얼: 전선 연결 -> 4가지 스위치 조건을 활동지 순서(00->10->01->11)대로 안내
      ============================================================ */
   var tutorialBanner = document.getElementById('tutorialBanner');
   var tutorialBannerText = document.getElementById('tutorialBannerText');
-  var tutorialStep = 'wires'; // wires -> crank1 -> switch1 -> crank2 -> switch2 -> crank3 -> done
+  var tutorialStep = 'wires';
   var circuitConnected = false;
   var connectedLegs = { Ared: false, Ablack: false, Bred: false, Bblack: false };
+
+  // 스위치 관련 단계는 "도달해야 할 상태"로 정의한다: 몇 번을 토글하든 이 상태가 되면 통과.
+  var SWITCH_TARGETS = {
+    sw10: { s1: true, s2: false },
+    sw01: { s1: false, s2: true },
+    sw11: { s1: true, s2: true }
+  };
+  var NEXT_AFTER_SWITCH = { sw10: 'crank2', sw01: 'crank3', sw11: 'crank4' };
+  var NEXT_AFTER_RECORD = { crank1: 'sw10', crank2: 'sw01', crank3: 'sw11', crank4: 'done' };
 
   var TUTORIAL_MESSAGES = {
     wires: '👉 전선을 눌러 연결하세요',
     crank1: '👉 A의 손잡이를 눌러보세요',
     crank2: '👉 A의 손잡이를 눌러보세요',
     crank3: '👉 A의 손잡이를 눌러보세요',
-    switch1: '👉 스위치 1을 눌러서 닫아보세요',
-    switch2: '👉 스위치 2를 눌러서 닫아보세요'
+    crank4: '👉 A의 손잡이를 눌러보세요',
+    sw10: '👉 이번에는 스위치 1을 닫아보세요',
+    sw01: '👉 이번에는 스위치 1을 열고 스위치 2를 닫아보세요',
+    sw11: '👉 이번에는 스위치 1과 스위치 2를 모두 닫아보세요'
   };
 
   var tutorialRings = Array.prototype.slice.call(document.querySelectorAll('.tutorial-ring'));
 
-  function setActiveRing(ringKey) {
+  function setActiveRing(keys) {
+    if (keys == null) keys = [];
+    else if (!Array.isArray(keys)) keys = [keys];
     tutorialRings.forEach(function (el) {
-      el.classList.toggle('active', el.dataset.ring === ringKey);
+      el.classList.toggle('active', keys.indexOf(el.dataset.ring) !== -1);
     });
   }
 
@@ -1173,27 +1171,32 @@
     });
   }
 
+  // 스위치 목표 단계에서, 목표 상태와 현재 상태가 다른 스위치만 링으로 강조한다.
+  function ringsNeededForSwitchStep(step) {
+    var target = SWITCH_TARGETS[step];
+    var rings = [];
+    if (target.s1 !== sim.switch1Closed) rings.push('switch1');
+    if (target.s2 !== sim.switch2Closed) rings.push('switch2');
+    return rings;
+  }
+
   function setTutorialStep(step) {
     tutorialStep = step;
-    if (step === 'wires') {
-      tutorialBanner.classList.add('show');
-      tutorialBannerText.textContent = TUTORIAL_MESSAGES.wires;
-      updateWireRings();
-    } else if (step === 'done') {
+    if (step === 'done') {
       tutorialBanner.classList.remove('show');
       setActiveRing(null);
       recordBtn.classList.remove('tutorial-highlight');
+      return;
+    }
+    tutorialBanner.classList.add('show');
+    tutorialBannerText.textContent = TUTORIAL_MESSAGES[step];
+    recordBtn.classList.remove('tutorial-highlight');
+    if (step === 'wires') {
+      updateWireRings();
+    } else if (SWITCH_TARGETS[step]) {
+      setActiveRing(ringsNeededForSwitchStep(step));
     } else {
-      tutorialBanner.classList.add('show');
-      tutorialBannerText.textContent = TUTORIAL_MESSAGES[step];
-      recordBtn.classList.remove('tutorial-highlight');
-      if (step === 'crank1' || step === 'crank2' || step === 'crank3') {
-        setActiveRing('crank');
-      } else if (step === 'switch1') {
-        setActiveRing('switch1');
-      } else if (step === 'switch2') {
-        setActiveRing('switch2');
-      }
+      setActiveRing('crank');
     }
   }
 
@@ -1216,27 +1219,32 @@
     });
   });
 
+  // 스위치 단계 중 목표 상태에 도달했는지 확인하고, 도달했으면 다음 크랭크 단계로 넘어간다.
+  function checkSwitchTutorialProgress() {
+    if (!SWITCH_TARGETS[tutorialStep]) return;
+    var target = SWITCH_TARGETS[tutorialStep];
+    if (target.s1 === sim.switch1Closed && target.s2 === sim.switch2Closed) {
+      setTutorialStep(NEXT_AFTER_SWITCH[tutorialStep]);
+    } else {
+      setActiveRing(ringsNeededForSwitchStep(tutorialStep));
+    }
+  }
+
   // 크랭크를 10회 다 돌리고 나면, 튜토리얼 중에는 "결과 기록" 버튼을 강조한다.
   function promptRecordIfTutorial() {
-    if (tutorialStep === 'crank1' || tutorialStep === 'crank2' || tutorialStep === 'crank3') {
+    if (NEXT_AFTER_RECORD.hasOwnProperty(tutorialStep)) {
       tutorialBannerText.textContent = '👉 결과 기록을 눌러보세요';
       setActiveRing(null);
       recordBtn.classList.add('tutorial-highlight');
     }
   }
 
-  // 결과를 기록한 뒤, 아직 닫지 않은 스위치가 있으면 그걸 닫으라고 안내하고,
-  // 둘 다 닫혀 있으면 튜토리얼을 종료하고 자유 실험으로 넘어간다.
+  // 결과를 기록한 뒤 다음 단계(다음 스위치 조합 안내, 또는 튜토리얼 종료)로 넘어간다.
   function advanceTutorialAfterRecord() {
-    if (tutorialStep !== 'crank1' && tutorialStep !== 'crank2' && tutorialStep !== 'crank3') return;
+    var next = NEXT_AFTER_RECORD[tutorialStep];
+    if (!next) return;
     reset();
-    if (!sim.switch1Closed) {
-      setTutorialStep('switch1');
-    } else if (!sim.switch2Closed) {
-      setTutorialStep('switch2');
-    } else {
-      setTutorialStep('done');
-    }
+    setTutorialStep(next);
   }
 
   var soundEnabled = false;
@@ -1377,12 +1385,7 @@
     statusEl.textContent = closed ? '닫힘' : '열림';
     updateDonut();
     updateLoadVisuals();
-
-    if (closed && which === 1 && tutorialStep === 'switch1') {
-      setTutorialStep('crank2');
-    } else if (closed && which === 2 && tutorialStep === 'switch2') {
-      setTutorialStep('crank3');
-    }
+    checkSwitchTutorialProgress();
   }
 
   switch1.addEventListener('click', function () { toggleSwitch(1); });
@@ -1607,24 +1610,93 @@
       chip.type = 'button';
       chip.className = 'word-chip';
       chip.textContent = word;
-      chip.addEventListener('click', function () {
-        if (state.submitted) return;
-        var blanks = sentenceDiv.querySelectorAll('.blank');
-        for (var i = 0; i < blanks.length; i++) {
-          if (state.filled[i] == null) {
-            state.filled[i] = word;
-            blanks[i].textContent = word;
-            blanks[i].classList.add('filled');
-            break;
-          }
-        }
-        updateSubmitEnabled(qid);
-      });
+      attachChipDrag(chip, word, sentenceDiv, qid);
       bankDiv.appendChild(chip);
     });
     container.appendChild(bankDiv);
 
     updateSubmitEnabled(qid);
+  }
+
+  // 단어 칩을 드래그해서 빈칸에 놓기(짧게 탭만 하면 비어있는 첫 빈칸에 채워짐)
+  function attachChipDrag(chip, word, sentenceDiv, qid) {
+    chip.addEventListener('pointerdown', function (e) {
+      var state = reflectState[qid];
+      if (state.submitted) return;
+      e.preventDefault();
+      var startX = e.clientX, startY = e.clientY;
+      var pointerId = e.pointerId;
+      var dragging = false;
+      var ghost = null;
+      var hoveredBlank = null;
+
+      function moveGhost(x, y) {
+        if (!ghost) return;
+        ghost.style.transform = 'translate(' + (x - ghost.offsetWidth / 2) + 'px,' + (y - ghost.offsetHeight / 2) + 'px)';
+      }
+
+      function fillBlank(idx) {
+        state.filled[idx] = word;
+        var span = sentenceDiv.querySelector('.blank[data-index="' + idx + '"]');
+        span.textContent = word;
+        span.classList.remove('correct', 'incorrect');
+        span.classList.add('filled');
+        updateSubmitEnabled(qid);
+      }
+
+      function cleanup() {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+        chip.classList.remove('dragging-source');
+        if (ghost) { ghost.remove(); ghost = null; }
+        if (hoveredBlank) { hoveredBlank.classList.remove('drop-hover'); hoveredBlank = null; }
+      }
+
+      function blankUnderPoint(x, y) {
+        var el = document.elementFromPoint(x, y);
+        var blank = el && el.closest ? el.closest('.blank') : null;
+        return (blank && sentenceDiv.contains(blank) && !state.submitted) ? blank : null;
+      }
+
+      function onMove(ev) {
+        if (ev.pointerId !== pointerId) return;
+        var dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if (!dragging && Math.sqrt(dx * dx + dy * dy) > 6) {
+          dragging = true;
+          chip.classList.add('dragging-source');
+          ghost = document.createElement('div');
+          ghost.className = 'word-chip drag-ghost';
+          ghost.textContent = word;
+          document.body.appendChild(ghost);
+        }
+        if (!dragging) return;
+        moveGhost(ev.clientX, ev.clientY);
+        var blank = blankUnderPoint(ev.clientX, ev.clientY);
+        if (blank !== hoveredBlank) {
+          if (hoveredBlank) hoveredBlank.classList.remove('drop-hover');
+          hoveredBlank = blank;
+          if (hoveredBlank) hoveredBlank.classList.add('drop-hover');
+        }
+      }
+
+      function onUp(ev) {
+        if (ev.pointerId !== pointerId) return;
+        if (dragging) {
+          var blank = blankUnderPoint(ev.clientX, ev.clientY);
+          if (blank) fillBlank(Number(blank.dataset.index));
+        } else if (!state.submitted) {
+          for (var i = 0; i < state.filled.length; i++) {
+            if (state.filled[i] == null) { fillBlank(i); break; }
+          }
+        }
+        cleanup();
+      }
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+    });
   }
 
   function gradeReflect(qid) {
@@ -1679,11 +1751,9 @@
   function wireReflect(qid) {
     renderReflect(qid);
     var submitBtn = document.getElementById('reflect' + qid + 'Submit');
-    var answerBox = document.getElementById('reflect' + qid + 'Answer');
     submitBtn.addEventListener('click', function () {
       gradeReflect(qid);
       submitBtn.disabled = true;
-      answerBox.classList.add('show');
     });
   }
   wireReflect(1);
