@@ -161,17 +161,17 @@
           <!-- 스위치2 좌측 -> 클립B(빨강) 조 -->
           <path d="M 850 205 C 1050 200 1150 240 1292 316" />
 
-          <!-- 스위치1 우측 단자 -> 꼬마전구 좌측 단자 -->
-          <path d="M 750 210 C 745 260 715 300 665 335" />
+          <!-- 스위치1 우측 단자 -> 꼬마전구 좌측 단자 (단자에 정확히 착지) -->
+          <path d="M 750 214 C 745 260 700 300 660 336" />
           <!-- 스위치2 우측 단자 -> 버저 좌측 단자 -->
-          <path d="M 950 210 C 955 260 925 300 875 335" />
+          <path d="M 950 214 C 945 260 900 300 860 336" />
 
-          <!-- 클립A(검정) 조 -> 꼬마전구 우측 단자 (아래쪽 공용 레일, 보드 밑으로 처짐) -->
-          <path d="M 107 385 C 280 480 520 500 690 460 C 715 430 730 380 740 340" />
+          <!-- 클립A(검정) 조 -> 꼬마전구 우측 단자 (아래쪽 공용 레일, 보드 밑으로 처짐. 단일 곡선이라 꺾임 없음) -->
+          <path d="M 107 385 C 320 545 560 480 740 336" />
           <!-- 꼬마전구 우측 -> 버저 우측 (아래쪽 공용 레일 계속, 처짐) -->
-          <path d="M 740 340 C 760 420 880 420 900 400 C 925 378 935 358 940 340" />
+          <path d="M 740 336 C 800 445 880 445 940 336" />
           <!-- 버저 우측 -> 클립B(검정) 조 -->
-          <path d="M 940 340 C 955 380 970 430 985 460 C 1150 500 1250 480 1293 375" />
+          <path d="M 940 336 C 1090 480 1180 500 1293 375" />
         </g>
 
         <!-- ============ 클립 4개 (조: 회로 방향 / 크림프: 발전기 인출선) ============ -->
@@ -236,23 +236,29 @@
         <!-- ============ 꼬마전구 ============ -->
         <g id="bulb">
           <rect x="630" y="330" width="140" height="95" rx="14" fill="var(--board)" stroke="var(--board-stroke)" stroke-width="2" filter="url(#softShadow)"/>
+          <!-- 단자 -> 소켓 내부 배선 (보드 안에서 실제로 이어짐) -->
+          <path d="M 660 340 L 660 358 Q 660 366 668 366 L 692 366" fill="none" stroke="var(--post-stroke)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M 740 340 L 740 358 Q 740 366 732 366 L 708 366" fill="none" stroke="var(--post-stroke)" stroke-width="3" stroke-linecap="round"/>
+          <rect x="686" y="360" width="28" height="14" rx="2" fill="var(--post-stroke)"/>
+          <circle id="bulb-glass" cx="700" cy="398" r="28" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3"/>
+          <path d="M 689 388 Q 700 379 711 388 M 689 406 Q 700 415 711 406" stroke="#64748b" stroke-width="3" fill="none" stroke-linecap="round"/>
           <use href="#post" x="660" y="340"/>
           <use href="#post" x="740" y="340"/>
-          <rect x="691" y="345" width="18" height="16" fill="var(--post-stroke)"/>
-          <circle id="bulb-glass" cx="700" cy="393" r="30" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3"/>
-          <path d="M 688 383 Q 700 373 712 383 M 688 403 Q 700 413 712 403" stroke="#64748b" stroke-width="3" fill="none" stroke-linecap="round"/>
         </g>
         <text class="label" x="700" y="450">꼬마전구</text>
 
         <!-- ============ 버저 ============ -->
         <g id="buzzer">
           <rect x="830" y="330" width="140" height="95" rx="14" fill="var(--board)" stroke="var(--board-stroke)" stroke-width="2" filter="url(#softShadow)"/>
+          <!-- 단자 -> 버저 하우징 내부 배선 -->
+          <path d="M 860 340 L 860 358 Q 860 366 868 366 L 872 366" fill="none" stroke="var(--post-stroke)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M 940 340 L 940 358 Q 940 366 932 366 L 928 366" fill="none" stroke="var(--post-stroke)" stroke-width="3" stroke-linecap="round"/>
+          <rect id="buzzer-body" x="866" y="358" width="68" height="52" rx="8" fill="#334155" stroke="#1e293b" stroke-width="3"/>
+          <circle cx="900" cy="384" r="18" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+          <circle cx="900" cy="384" r="10" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+          <circle cx="900" cy="384" r="3" fill="#94a3b8"/>
           <use href="#post" x="860" y="340"/>
           <use href="#post" x="940" y="340"/>
-          <rect id="buzzer-body" x="866" y="352" width="68" height="52" rx="8" fill="#334155" stroke="#1e293b" stroke-width="3"/>
-          <circle cx="900" cy="378" r="18" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
-          <circle cx="900" cy="378" r="10" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
-          <circle cx="900" cy="378" r="3" fill="#94a3b8"/>
         </g>
         <text class="label" x="900" y="450">버저</text>
 
