@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>전자기 유도 에너지 전환 시뮬레이션</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --wire: #f4c430;
+    --wire-dark: #c99a1e;
+    --metal: #cbd5e1;
+    --metal-dark: #94a3b8;
+    --body-yellow: #fde047;
+    --body-yellow-dark: #eab308;
+    --crank: #2dd4bf;
+    --crank-dark: #0f9488;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+  }
+  header {
+    flex: 0 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 1px solid #334155;
+  }
+  header h1 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 700;
+  }
+  header .stage {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  main {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    min-height: 0;
+  }
+  #circuitStage {
+    width: 100%;
+    height: 100%;
+    max-width: 1400px;
+  }
+  svg { width: 100%; height: 100%; display: block; }
+
+  .label {
+    font-size: 22px;
+    font-weight: 700;
+    fill: var(--text);
+    text-anchor: middle;
+  }
+  .sublabel {
+    font-size: 15px;
+    fill: var(--text-dim);
+    text-anchor: middle;
+  }
+  .wire {
+    fill: none;
+    stroke: var(--wire);
+    stroke-width: 7;
+    stroke-linecap: round;
+  }
+  .wire-outline {
+    fill: none;
+    stroke: var(--wire-dark);
+    stroke-width: 11;
+    stroke-linecap: round;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>전자기 유도 에너지 전환 시뮬레이션</h1>
+    <span class="stage">1단계 체크포인트 · 회로도 정적 렌더</span>
+  </header>
+  <main>
+    <div id="circuitStage">
+      <svg viewBox="0 0 1400 620" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- ============ 전선 (뒤에 깔림) ============ -->
+        <g id="wires">
+          <!-- A -> 위쪽 레일(스위치1/2 입력) -->
+          <path class="wire-outline" d="M 195 300 L 195 160 L 640 160" />
+          <path class="wire" d="M 195 300 L 195 160 L 640 160" />
+          <!-- A -> 아래쪽 레일(꼬마전구/버저 입력) -->
+          <path class="wire-outline" d="M 225 340 L 260 460 L 640 460" />
+          <path class="wire" d="M 225 340 L 260 460 L 640 460" />
+
+          <!-- 스위치1 -> 꼬마전구 -->
+          <path class="wire-outline" d="M 700 210 L 700 340" />
+          <path class="wire" d="M 700 210 L 700 340" />
+          <!-- 스위치2 -> 버저 -->
+          <path class="wire-outline" d="M 900 210 L 900 340" />
+          <path class="wire" d="M 900 210 L 900 340" />
+
+          <!-- 위쪽 레일: 스위치1 -> 스위치2 (병렬 입력 공유) -->
+          <path class="wire-outline" d="M 640 160 L 960 160" />
+          <path class="wire" d="M 640 160 L 960 160" />
+          <!-- 아래쪽 레일: 꼬마전구 -> 버저 (병렬 출력 공유) -->
+          <path class="wire-outline" d="M 640 460 L 960 460" />
+          <path class="wire" d="M 640 460 L 960 460" />
+
+          <!-- 위쪽 레일 -> B -->
+          <path class="wire-outline" d="M 960 160 L 1175 160 L 1205 300" />
+          <path class="wire" d="M 960 160 L 1175 160 L 1205 300" />
+          <!-- 아래쪽 레일 -> B -->
+          <path class="wire-outline" d="M 960 460 L 1140 460 L 1140 340" />
+          <path class="wire" d="M 960 460 L 1140 460 L 1140 340" />
+        </g>
+
+        <!-- ============ 손발전기 A ============ -->
+        <g id="genA">
+          <rect x="120" y="230" width="140" height="150" rx="28" fill="var(--body-yellow)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
+          <circle cx="190" cy="230" r="46" fill="var(--body-yellow)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
+          <g id="genA-crank" transform="rotate(-20 190 230)">
+            <rect x="184" y="150" width="12" height="90" rx="6" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
+            <circle cx="190" cy="150" r="14" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
+          </g>
+          <circle cx="190" cy="230" r="10" fill="var(--crank-dark)"/>
+        </g>
+        <text class="label" x="190" y="415">손발전기 A</text>
+        <text class="sublabel" x="190" y="440">(에너지 투입)</text>
+
+        <!-- ============ 손발전기 B ============ -->
+        <g id="genB">
+          <rect x="1140" y="230" width="140" height="150" rx="28" fill="var(--body-yellow)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
+          <circle cx="1210" cy="230" r="46" fill="var(--body-yellow)" stroke="var(--body-yellow-dark)" stroke-width="4"/>
+          <g id="genB-crank" transform="rotate(20 1210 230)">
+            <rect x="1204" y="150" width="12" height="90" rx="6" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
+            <circle cx="1210" cy="150" r="14" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
+          </g>
+          <circle cx="1210" cy="230" r="10" fill="var(--crank-dark)"/>
+        </g>
+        <text class="label" x="1210" y="415">손발전기 B</text>
+        <text class="sublabel" x="1210" y="440">(측정 대상)</text>
+
+        <!-- ============ 스위치 1 ============ -->
+        <g id="switch1" data-closed="false">
+          <rect x="630" y="170" width="140" height="70" rx="10" fill="var(--panel)" stroke="#475569" stroke-width="2"/>
+          <circle cx="660" cy="205" r="8" fill="var(--metal)" stroke="var(--metal-dark)" stroke-width="2"/>
+          <circle cx="740" cy="205" r="8" fill="var(--metal)" stroke="var(--metal-dark)" stroke-width="2"/>
+          <line id="switch1-lever" x1="660" y1="205" x2="725" y2="180" stroke="var(--metal)" stroke-width="8" stroke-linecap="round"/>
+        </g>
+        <text class="label" x="700" y="150">스위치 1</text>
+
+        <!-- ============ 스위치 2 ============ -->
+        <g id="switch2" data-closed="false">
+          <rect x="830" y="170" width="140" height="70" rx="10" fill="var(--panel)" stroke="#475569" stroke-width="2"/>
+          <circle cx="860" cy="205" r="8" fill="var(--metal)" stroke="var(--metal-dark)" stroke-width="2"/>
+          <circle cx="940" cy="205" r="8" fill="var(--metal)" stroke="var(--metal-dark)" stroke-width="2"/>
+          <line id="switch2-lever" x1="860" y1="205" x2="925" y2="180" stroke="var(--metal)" stroke-width="8" stroke-linecap="round"/>
+        </g>
+        <text class="label" x="900" y="150">스위치 2</text>
+
+        <!-- ============ 꼬마전구 ============ -->
+        <g id="bulb">
+          <rect x="660" y="335" width="80" height="20" rx="4" fill="var(--panel)" stroke="#475569" stroke-width="2"/>
+          <circle id="bulb-glass" cx="700" cy="380" r="38" fill="#334155" stroke="#64748b" stroke-width="3"/>
+          <path d="M 685 368 Q 700 358 715 368 M 685 392 Q 700 402 715 392" stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+        <text class="label" x="700" y="450">꼬마전구</text>
+
+        <!-- ============ 버저 ============ -->
+        <g id="buzzer">
+          <rect x="860" y="335" width="80" height="20" rx="4" fill="var(--panel)" stroke="#475569" stroke-width="2"/>
+          <rect id="buzzer-body" x="862" y="355" width="76" height="55" rx="10" fill="#334155" stroke="#64748b" stroke-width="3"/>
+          <line x1="880" y1="370" x2="880" y2="395" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+          <line x1="900" y1="365" x2="900" y2="400" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+          <line x1="920" y1="370" x2="920" y2="395" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <text class="label" x="900" y="450">버저</text>
+
+      </svg>
+    </div>
+  </main>
+</div>
+</body>
+</html>
