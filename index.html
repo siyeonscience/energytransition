@@ -221,10 +221,13 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 7px 18px;
-    margin: 6px 20px 0;
-    border-radius: 10px;
+    padding: 9px 22px;
+    margin: 18px auto 0;
+    max-width: 420px;
+    width: fit-content;
+    border-radius: 14px;
     background: #0f9488;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.35);
     color: #fff;
     font-size: 15px;
     font-weight: 700;
@@ -488,6 +491,15 @@
   }
   .flow-diagram .arrow { color: var(--text-dim); font-size: 18px; }
 
+  .quiz-photo {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto 20px;
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px;
+  }
   .quiz-q { margin-bottom: 28px; }
   .quiz-stem { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
   .quiz-options-list {
@@ -554,14 +566,30 @@
     white-space: pre-wrap;
   }
 
-  @media print {
-    body { background: #fff; color: #000; overflow: visible; }
-    header, footer, #recordPanel .btn-row, .no-print { display: none !important; }
-    #screens, .screen { position: static; overflow: visible; display: block !important; }
-    .screen:not(#screen-summary) { display: none !important; }
-    .card { border-color: #999; background: #fafafa; }
-    table.recordTable th, table.recordTable td { border-color: #999; color: #000; }
-    .quiz-explain { background: #f4f4f4; border-color: #999; color: #000; display: block !important; }
+  .summary-name {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    min-height: 1em;
+  }
+  #saveControls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .name-input {
+    min-height: 48px;
+    width: 240px;
+    max-width: 80vw;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid #475569;
+    background: #0f172a;
+    color: var(--text);
+    font-size: 15px;
+    text-align: center;
   }
 </style>
 </head>
@@ -845,6 +873,7 @@
           <svg id="donutSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <circle cx="100" cy="100" r="70" fill="none" stroke="#1e293b" stroke-width="28"/>
             <g transform="rotate(-90 100 100)">
+              <circle id="donutLoss" cx="100" cy="100" r="70" fill="none" stroke="#64748b" stroke-width="28" stroke-dasharray="0 440"/>
               <circle id="donutLight" cx="100" cy="100" r="70" fill="none" stroke="#fbbf24" stroke-width="28" stroke-dasharray="0 440"/>
               <circle id="donutSound" cx="100" cy="100" r="70" fill="none" stroke="#38bdf8" stroke-width="28" stroke-dasharray="0 440"/>
               <circle id="donutToB" cx="100" cy="100" r="70" fill="none" stroke="#34d399" stroke-width="28" stroke-dasharray="440 440"/>
@@ -853,6 +882,7 @@
             <text x="100" y="120" text-anchor="middle" font-size="12" fill="#94a3b8">B로 전달</text>
           </svg>
           <div class="legend-vertical">
+            <div class="row"><span class="name"><i class="dot" style="background:#64748b"></i>저항·마찰 손실</span><b id="lossVal">13</b></div>
             <div class="row"><span class="name"><i class="dot" style="background:#fbbf24"></i>빛 에너지(전구)</span><b id="lightVal">0</b></div>
             <div class="row"><span class="name"><i class="dot" style="background:#38bdf8"></i>소리 에너지(버저)</span><b id="soundVal">0</b></div>
             <div class="row"><span class="name"><i class="dot" style="background:#34d399"></i>B로 전달</span><b id="toBVal">87</b></div>
@@ -945,6 +975,7 @@
       <div class="panel">
         <h2>확인 문제</h2>
         <div class="sub">[1~2] 그림과 같이 실험 장치를 꾸미고 스위치 1, 2를 열거나 닫으면서 손발전기 A의 손잡이를 돌렸다.</div>
+        <img src="circuit-photo.webp" alt="손발전기 A와 B, 스위치 1·2, 꼬마전구, 버저가 전선으로 연결된 실험 장치 사진" class="quiz-photo">
         <div id="quizContainer"></div>
         <div id="quizNudge" class="sub" style="text-align:center;">두 문제를 모두 풀면 다음으로 이동할 수 있어요</div>
         <div class="btn-row">
@@ -959,7 +990,8 @@
     <section id="screen-summary" class="screen">
       <div class="panel">
         <h2>결과 요약</h2>
-        <div class="sub">아래 내용을 인쇄하거나 화면을 캡처해서 제출하세요.</div>
+        <div class="sub">아래 내용을 이미지로 저장해서 제출하세요.</div>
+        <div class="summary-name" id="summaryNameDisplay"></div>
 
         <div class="card">
           <h3>실험 기록표</h3>
@@ -996,9 +1028,12 @@
           <div class="summary-answer" id="sumQuiz2" style="margin-top:8px;">2번 문항: 응답하지 않음</div>
         </div>
 
-        <div class="btn-row no-print">
-          <button class="primary-btn" id="printBtn" type="button">인쇄하기</button>
-          <button class="secondary-btn" id="restartBtn" type="button">처음부터 다시</button>
+        <div id="saveControls">
+          <input type="text" id="studentNameInput" class="name-input" placeholder="이름을 입력하세요" maxlength="20">
+          <div class="btn-row">
+            <button class="primary-btn" id="saveImageBtn" type="button" disabled>이미지로 저장하기</button>
+            <button class="secondary-btn" id="restartBtn" type="button">처음부터 다시</button>
+          </div>
         </div>
       </div>
     </section>
@@ -1026,6 +1061,7 @@
     });
     refreshStepNav();
     if (name === 'summary') fillSummary();
+    saveState();
   }
 
   function unlockScreen(name) {
@@ -1110,10 +1146,12 @@
   var lever2 = document.getElementById('switch2-lever');
   var switch1Status = document.getElementById('switch1Status');
   var switch2Status = document.getElementById('switch2Status');
+  var donutLoss = document.getElementById('donutLoss');
   var donutLight = document.getElementById('donutLight');
   var donutSound = document.getElementById('donutSound');
   var donutToB = document.getElementById('donutToB');
   var donutCenterVal = document.getElementById('donutCenterVal');
+  var lossVal = document.getElementById('lossVal');
   var lightVal = document.getElementById('lightVal');
   var soundVal = document.getElementById('soundVal');
   var toBVal = document.getElementById('toBVal');
@@ -1210,6 +1248,7 @@
       circuitConnected = true;
       setTutorialStep('crank1');
     }
+    saveState();
   }
 
   Array.prototype.forEach.call(document.querySelectorAll('.clip-hit'), function (hit) {
@@ -1303,28 +1342,31 @@
 
   var DONUT_CIRCUMFERENCE = 2 * Math.PI * 70;
 
-  // 저항·마찰 손실은 이 단원에서 다루지 않으므로 도넛 시각화에서는 제외하고,
-  // 빛/소리/B 전달 3가지만 그 셋의 합을 100%로 다시 정규화해서 보여준다.
-  // (B 회전수 계산 자체는 energyBreakdown()의 손실 13을 그대로 반영해 실측치와 일치시킨다.)
+  // 저항·마찰 손실을 포함한 실제 100 단위 그대로 도넛에 표시한다.
+  // (뺐더니 "둘 다 열림"일 때 B로 100% 전달되는 것처럼 보이는 오류가 있어 되돌림)
   function updateDonut() {
     var e = energyBreakdown();
-    var visibleTotal = e.light + e.sound + e.toB;
-    var lightFrac = visibleTotal > 0 ? e.light / visibleTotal : 0;
-    var soundFrac = visibleTotal > 0 ? e.sound / visibleTotal : 0;
-    var toBFrac = visibleTotal > 0 ? e.toB / visibleTotal : 0;
+    var lossFrac = e.loss / 100;
+    var lightFrac = e.light / 100;
+    var soundFrac = e.sound / 100;
+    var toBFrac = e.toB / 100;
 
+    var lossLen = lossFrac * DONUT_CIRCUMFERENCE;
     var lightLen = lightFrac * DONUT_CIRCUMFERENCE;
     var soundLen = soundFrac * DONUT_CIRCUMFERENCE;
     var toBLen = toBFrac * DONUT_CIRCUMFERENCE;
 
+    donutLoss.setAttribute('stroke-dasharray', lossLen + ' ' + (DONUT_CIRCUMFERENCE - lossLen));
+    donutLoss.setAttribute('stroke-dashoffset', '0');
     donutLight.setAttribute('stroke-dasharray', lightLen + ' ' + (DONUT_CIRCUMFERENCE - lightLen));
-    donutLight.setAttribute('stroke-dashoffset', '0');
+    donutLight.setAttribute('stroke-dashoffset', String(-lossLen));
     donutSound.setAttribute('stroke-dasharray', soundLen + ' ' + (DONUT_CIRCUMFERENCE - soundLen));
-    donutSound.setAttribute('stroke-dashoffset', String(-lightLen));
+    donutSound.setAttribute('stroke-dashoffset', String(-(lossLen + lightLen)));
     donutToB.setAttribute('stroke-dasharray', toBLen + ' ' + (DONUT_CIRCUMFERENCE - toBLen));
-    donutToB.setAttribute('stroke-dashoffset', String(-(lightLen + soundLen)));
+    donutToB.setAttribute('stroke-dashoffset', String(-(lossLen + lightLen + soundLen)));
 
     donutCenterVal.textContent = Math.round(toBFrac * 100) + '%';
+    lossVal.textContent = e.loss;
     lightVal.textContent = e.light;
     soundVal.textContent = e.sound;
     toBVal.textContent = e.toB;
@@ -1386,6 +1428,7 @@
     updateDonut();
     updateLoadVisuals();
     checkSwitchTutorialProgress();
+    saveState();
   }
 
   switch1.addEventListener('click', function () { toggleSwitch(1); });
@@ -1479,6 +1522,7 @@
     renderRecordTable();
     updateUI();
     advanceTutorialAfterRecord();
+    saveState();
   });
 
   function reset() {
@@ -1754,6 +1798,7 @@
     submitBtn.addEventListener('click', function () {
       gradeReflect(qid);
       submitBtn.disabled = true;
+      saveState();
     });
   }
   wireReflect(1);
@@ -1837,6 +1882,7 @@
           stemDiv.appendChild(tag);
           explainDiv.classList.add('show');
           checkQuizComplete();
+          saveState();
         });
         choicesDiv.appendChild(btn);
       });
@@ -1883,23 +1929,171 @@
     });
   }
 
-  document.getElementById('printBtn').addEventListener('click', function () {
-    window.print();
+  var studentNameInput = document.getElementById('studentNameInput');
+  var saveImageBtn = document.getElementById('saveImageBtn');
+  var summaryNameDisplay = document.getElementById('summaryNameDisplay');
+
+  studentNameInput.addEventListener('input', function () {
+    var name = studentNameInput.value.trim();
+    saveImageBtn.disabled = !name;
+    summaryNameDisplay.textContent = name ? '이름: ' + name : '';
+    saveState();
+  });
+
+  // 결과 요약을 PNG로 그려서 다운로드한다.
+  // 화면 DOM을 그대로 캡처하는 대신(크롬 계열은 SVG foreignObject로 그린
+  // 캔버스를 "오염됨" 처리해서 export를 막는다) 화면과 같은 내용을 캔버스
+  // 2D API로 직접 그린다 - 어떤 브라우저에서도 안정적으로 동작한다.
+  var REPORT_FONT = "'Pretendard','Noto Sans KR',system-ui,-apple-system,sans-serif";
+
+  function wrapTextChars(ctx, str, maxWidth) {
+    var lines = [];
+    var current = '';
+    for (var i = 0; i < str.length; i++) {
+      var test = current + str[i];
+      if (current.length > 0 && ctx.measureText(test).width > maxWidth) {
+        lines.push(current);
+        current = str[i];
+      } else {
+        current = test;
+      }
+    }
+    lines.push(current);
+    return lines;
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // draw=false: 실제로 그리지 않고 좌표만 계산해 전체 높이와 카드 위치를 구한다.
+  // draw=true: 같은 순서로 다시 실행하면서 이번엔 실제로 그린다(카드 배경은 미리 그려둔 뒤).
+  function layoutSummaryReport(ctx, draw, name, cardRects) {
+    var W = 760, PAD = 30, CARD_PAD = 18, X = PAD, INNER_W = W - PAD * 2 - CARD_PAD * 2, TX = X + CARD_PAD;
+    var y = PAD;
+
+    function setFont(size, weight) { ctx.font = (weight || 400) + ' ' + size + 'px ' + REPORT_FONT; }
+    function fillText(str, xPos, size, weight, color) {
+      setFont(size, weight);
+      if (draw) { ctx.fillStyle = color; ctx.fillText(str, xPos, y + size); }
+      y += size * 1.4;
+    }
+    function fillWrapped(str, xPos, maxW, size, weight, color) {
+      setFont(size, weight);
+      wrapTextChars(ctx, str, maxW).forEach(function (line) {
+        if (draw) { ctx.fillStyle = color; ctx.fillText(line, xPos, y + size); }
+        y += size * 1.5;
+      });
+    }
+    function cardOpen() { y += CARD_PAD; return y - CARD_PAD; }
+    function cardClose(top) {
+      y += CARD_PAD;
+      if (cardRects) cardRects.push({ top: top, bottom: y });
+      y += 16;
+    }
+
+    fillText('결과 요약', X, 25, 700, '#f1f5f9');
+    y += 2;
+    if (name) fillText('이름: ' + name, X, 15, 700, '#f1f5f9');
+    y += 8;
+
+    var t1 = cardOpen();
+    fillText('실험 기록표', TX, 15, 700, '#f1f5f9');
+    y += 2;
+    [['둘 다 연다', '00'], ['1만 닫는다', '10'], ['2만 닫는다', '01'], ['둘 다 닫는다', '11']].forEach(function (row) {
+      var v = records[row[1]];
+      var valueText = v != null ? v.toFixed(1) + '회' : '—';
+      fillText(row[0] + '  —  ' + valueText, TX, 14, 700, '#f1f5f9');
+    });
+    cardClose(t1);
+
+    var t2 = cardOpen();
+    fillText('정리하기 답변', TX, 15, 700, '#f1f5f9');
+    y += 2;
+    fillText('1. 에너지 전환으로 설명하기', TX, 13, 600, '#94a3b8');
+    fillWrapped(reflectSummaryText(1), TX, INNER_W, 13.5, 400, '#f1f5f9');
+    y += 6;
+    fillText('2. 회전수가 다른 까닭', TX, 13, 600, '#94a3b8');
+    fillWrapped(reflectSummaryText(2), TX, INNER_W, 13.5, 400, '#f1f5f9');
+    cardClose(t2);
+
+    var t3 = cardOpen();
+    fillText('확인 문제 결과', TX, 15, 700, '#f1f5f9');
+    y += 2;
+    var correctCount = quizAnswers.filter(function (a) { return a && a.correct; }).length;
+    fillText(correctCount + ' / 2문항 정답', TX, 16, 700, '#f1f5f9');
+    y += 2;
+    quizData.forEach(function (q, qi) {
+      var a = quizAnswers[qi];
+      var line = !a ? (qi + 1) + '번 문항: 응답하지 않음' :
+        (qi + 1) + '번 문항: ' + q.choices[a.selected] + ' 선택 — ' + (a.correct ? '정답' : '오답 (정답: ' + q.choices[q.correctIndex] + ')');
+      fillWrapped(line, TX, INNER_W, 13.5, 400, '#f1f5f9');
+    });
+    cardClose(t3);
+
+    return { width: W, height: y + PAD };
+  }
+
+  saveImageBtn.addEventListener('click', function () {
+    var name = studentNameInput.value.trim();
+    if (!name) return;
+
+    var scratchCtx = document.createElement('canvas').getContext('2d');
+    var cardRects = [];
+    var size = layoutSummaryReport(scratchCtx, false, name, cardRects);
+
+    var scale = 2;
+    var canvas = document.createElement('canvas');
+    canvas.width = size.width * scale;
+    canvas.height = size.height * scale;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, size.width, size.height);
+    ctx.fillStyle = '#1e293b';
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    cardRects.forEach(function (r) {
+      roundRectPath(ctx, 30, r.top, size.width - 60, r.bottom - r.top, 14);
+      ctx.fill();
+      roundRectPath(ctx, 30, r.top, size.width - 60, r.bottom - r.top, 14);
+      ctx.stroke();
+    });
+    layoutSummaryReport(ctx, true, name, null);
+
+    canvas.toBlob(function (blob) {
+      var blobUrl = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = '에너지전환_결과_' + name + '.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 1000);
+    }, 'image/png');
   });
 
   document.getElementById('restartBtn').addEventListener('click', function () {
     if (!window.confirm('모든 기록을 지우고 처음부터 다시 시작할까요?')) return;
+    clearState();
     records['00'] = records['10'] = records['01'] = records['11'] = null;
     quizAnswers = [null, null];
     renderReflect(1);
     document.getElementById('reflect1Submit').disabled = true;
-    document.getElementById('reflect1Answer').classList.remove('show');
     renderReflect(2);
     document.getElementById('reflect2Submit').disabled = true;
-    document.getElementById('reflect2Answer').classList.remove('show');
     renderQuiz();
     checkQuizComplete();
     toSummaryBtn.disabled = true;
+    studentNameInput.value = '';
+    saveImageBtn.disabled = true;
+    summaryNameDisplay.textContent = '';
 
     sim.switch1Closed = false;
     sim.switch2Closed = false;
@@ -1921,6 +2115,129 @@
     maxVisitedIndex = 0;
     showScreen('intro');
   });
+
+  /* ============================================================
+     같은 기기·같은 브라우저에서 다시 들어와도 이어서 할 수 있도록
+     localStorage에 저장/복원한다. (새로고침, 실수로 탭이 닫힌 경우 등)
+     ============================================================ */
+  var STORAGE_KEY = 'energyTransitionState_v1';
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        maxVisitedIndex: maxVisitedIndex,
+        currentScreenIndex: currentScreenIndex,
+        records: records,
+        switch1Closed: sim.switch1Closed,
+        switch2Closed: sim.switch2Closed,
+        circuitConnected: circuitConnected,
+        connectedLegs: connectedLegs,
+        tutorialStep: tutorialStep,
+        reflectState: reflectState,
+        quizAnswers: quizAnswers,
+        studentName: studentNameInput.value
+      }));
+    } catch (e) { /* localStorage를 못 쓰는 환경이면 조용히 무시 */ }
+  }
+
+  function clearState() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  }
+
+  function restoreState() {
+    var saved;
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      saved = JSON.parse(raw);
+    } catch (e) { return; }
+    if (!saved) return;
+
+    if (saved.switch1Closed) {
+      sim.switch1Closed = true;
+      lever1.setAttribute('transform', 'rotate(0 650 205)');
+      switch1Status.textContent = '닫힘';
+    }
+    if (saved.switch2Closed) {
+      sim.switch2Closed = true;
+      lever2.setAttribute('transform', 'rotate(0 850 205)');
+      switch2Status.textContent = '닫힘';
+    }
+    updateDonut();
+    updateLoadVisuals();
+
+    if (saved.connectedLegs) {
+      connectedLegs = saved.connectedLegs;
+      Object.keys(connectedLegs).forEach(function (leg) {
+        if (!connectedLegs[leg]) return;
+        var legGroup = document.querySelector('.wireLeg[data-leg="' + leg + '"]');
+        if (legGroup) legGroup.classList.remove('disconnected');
+      });
+    }
+    circuitConnected = !!saved.circuitConnected;
+
+    if (saved.records) {
+      records = saved.records;
+      renderRecordTable();
+    }
+
+    if (saved.tutorialStep) setTutorialStep(saved.tutorialStep);
+
+    if (saved.reflectState) {
+      [1, 2].forEach(function (qid) {
+        var savedQ = saved.reflectState[qid];
+        if (!savedQ) return;
+        renderReflect(qid);
+        savedQ.filled.forEach(function (word, idx) {
+          if (word == null) return;
+          reflectState[qid].filled[idx] = word;
+          var span = document.querySelector('#reflect' + qid + 'Container .blank[data-index="' + idx + '"]');
+          if (span) { span.textContent = word; span.classList.add('filled'); }
+        });
+        updateSubmitEnabled(qid);
+        if (savedQ.submitted) {
+          gradeReflect(qid);
+          document.getElementById('reflect' + qid + 'Submit').disabled = true;
+        }
+      });
+    }
+
+    if (saved.quizAnswers) {
+      quizAnswers = saved.quizAnswers;
+      renderQuiz();
+      quizAnswers.forEach(function (a, qi) {
+        if (!a) return;
+        var qDiv = quizContainer.children[qi];
+        var choicesDiv = qDiv.querySelector('.quiz-choices');
+        var stemDiv = qDiv.querySelector('.quiz-stem');
+        var explainDiv = qDiv.querySelector('.quiz-explain');
+        Array.prototype.forEach.call(choicesDiv.children, function (b, bi) {
+          b.disabled = true;
+          if (bi === quizData[qi].correctIndex) b.classList.add('correct');
+          else if (bi === a.selected) b.classList.add('incorrect');
+        });
+        var tag = document.createElement('span');
+        tag.className = 'quiz-result-tag ' + (a.correct ? 'correct' : 'incorrect');
+        tag.textContent = a.correct ? '정답이에요!' : '아쉬워요';
+        stemDiv.appendChild(tag);
+        explainDiv.classList.add('show');
+      });
+      checkQuizComplete();
+    }
+
+    if (saved.studentName) {
+      studentNameInput.value = saved.studentName;
+      var trimmed = saved.studentName.trim();
+      saveImageBtn.disabled = !trimmed;
+      summaryNameDisplay.textContent = trimmed ? '이름: ' + trimmed : '';
+    }
+
+    maxVisitedIndex = typeof saved.maxVisitedIndex === 'number' ? saved.maxVisitedIndex : 0;
+    var idx = typeof saved.currentScreenIndex === 'number' ? saved.currentScreenIndex : 0;
+    showScreen(SCREENS[idx] || 'intro');
+  }
+
+  restoreState();
 })();
 </script>
 </body>
