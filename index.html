@@ -158,13 +158,63 @@
     cursor: pointer;
   }
   #resetBtn:active { background: #334155; }
+
+  .switch-hit {
+    cursor: pointer;
+  }
+  .switch-hit.locked {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  #energyBar {
+    flex: 0 0 auto;
+    padding: 10px 24px 0;
+  }
+  #energyBar .bar {
+    display: flex;
+    height: 26px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e293b;
+    border: 1px solid #334155;
+  }
+  #energyBar .seg {
+    height: 100%;
+    transition: width 0.35s ease;
+  }
+  .seg-loss { background: #64748b; }
+  .seg-light { background: #fbbf24; }
+  .seg-sound { background: #38bdf8; }
+  .seg-toB { background: #34d399; }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 22px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+  }
+  .legend .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .legend b {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <h1>전자기 유도 에너지 전환 시뮬레이션</h1>
-    <span class="stage">2단계 체크포인트 · A 손잡이 + B 자동 회전 + 계측</span>
+    <span class="stage">3단계 체크포인트 · 스위치 + 에너지 모델 + 예산 막대</span>
   </header>
   <main>
     <div id="circuitStage">
@@ -268,31 +318,31 @@
         <text class="sublabel" x="1210" y="487">(측정 대상)</text>
 
         <!-- ============ 스위치 1 ============ -->
-        <g id="switch1" data-closed="false">
+        <g id="switch1" class="switch-hit" data-closed="false">
           <rect x="610" y="160" width="180" height="90" rx="14" fill="var(--board)" stroke="var(--board-stroke)" stroke-width="2" filter="url(#softShadow)"/>
           <use href="#post" x="650" y="205"/>
           <use href="#post" x="750" y="205"/>
           <!-- 회전축 캡 -->
           <circle cx="650" cy="205" r="6" fill="var(--lever-dark)"/>
           <g id="switch1-lever" transform="rotate(-32 650 205)">
-            <rect x="650" y="200" width="86" height="10" rx="5" fill="var(--lever)" stroke="var(--lever-dark)" stroke-width="1.5"/>
-            <ellipse cx="736" cy="205" rx="12" ry="9" fill="var(--knob)" stroke="var(--lever-dark)" stroke-width="1.5"/>
+            <rect x="650" y="200" width="100" height="10" rx="5" fill="var(--lever)" stroke="var(--lever-dark)" stroke-width="1.5"/>
+            <ellipse cx="738" cy="205" rx="12" ry="9" fill="var(--knob)" stroke="var(--lever-dark)" stroke-width="1.5"/>
           </g>
         </g>
-        <text class="label" x="700" y="145">스위치 1</text>
+        <text class="label" x="700" y="145">스위치 1 · <tspan id="switch1Status" fill="var(--text-dim)" font-size="15" font-weight="500">열림</tspan></text>
 
         <!-- ============ 스위치 2 ============ -->
-        <g id="switch2" data-closed="false">
+        <g id="switch2" class="switch-hit" data-closed="false">
           <rect x="810" y="160" width="180" height="90" rx="14" fill="var(--board)" stroke="var(--board-stroke)" stroke-width="2" filter="url(#softShadow)"/>
           <use href="#post" x="850" y="205"/>
           <use href="#post" x="950" y="205"/>
           <circle cx="850" cy="205" r="6" fill="var(--lever-dark)"/>
           <g id="switch2-lever" transform="rotate(-32 850 205)">
-            <rect x="850" y="200" width="86" height="10" rx="5" fill="var(--lever)" stroke="var(--lever-dark)" stroke-width="1.5"/>
-            <ellipse cx="936" cy="205" rx="12" ry="9" fill="var(--knob)" stroke="var(--lever-dark)" stroke-width="1.5"/>
+            <rect x="850" y="200" width="100" height="10" rx="5" fill="var(--lever)" stroke="var(--lever-dark)" stroke-width="1.5"/>
+            <ellipse cx="938" cy="205" rx="12" ry="9" fill="var(--knob)" stroke="var(--lever-dark)" stroke-width="1.5"/>
           </g>
         </g>
-        <text class="label" x="900" y="145">스위치 2</text>
+        <text class="label" x="900" y="145">스위치 2 · <tspan id="switch2Status" fill="var(--text-dim)" font-size="15" font-weight="500">열림</tspan></text>
 
         <!-- ============ 꼬마전구 ============ -->
         <g id="bulb">
@@ -326,6 +376,20 @@
       </svg>
     </div>
   </main>
+  <section id="energyBar">
+    <div class="bar">
+      <div class="seg seg-loss" id="segLoss"></div>
+      <div class="seg seg-light" id="segLight"></div>
+      <div class="seg seg-sound" id="segSound"></div>
+      <div class="seg seg-toB" id="segToB"></div>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:#64748b"></i>저항·마찰 손실 <b id="lossVal">13</b></span>
+      <span><i class="dot" style="background:#fbbf24"></i>빛 에너지(전구) <b id="lightVal">0</b></span>
+      <span><i class="dot" style="background:#38bdf8"></i>소리 에너지(버저) <b id="soundVal">0</b></span>
+      <span><i class="dot" style="background:#34d399"></i>B로 전달 <b id="toBVal">87</b></span>
+    </div>
+  </section>
   <footer>
     <div class="readout">
       <div class="value" id="aCountDisplay">0/10회</div>
@@ -345,7 +409,9 @@
   var TICK_MS = 600;       // 0.6초당 1회 -> 10회 = 6초
   var TARGET_COUNT = 10;
   var ROTATION_SPEED = 320; // deg/sec, 누르는 동안의 시각적 회전 속도
-  var ENERGY_TOTAL_AFTER_LOSS = 87; // 마찰·저항 손실(13) 제외, 스위치 로직은 3단계에서 추가
+  var LOSS = 13;            // 저항·마찰 손실, 항상 발생
+  var LIGHT_COST = 24;      // 스위치1(꼬마전구) 닫힘 시 소비
+  var SOUND_COST = 3;       // 스위치2(버저) 닫힘 시 소비
 
   var sim = {
     count: 0,
@@ -356,7 +422,9 @@
     rafId: null,
     tickTimer: null,
     lastFrameTime: null,
-    bResult: null
+    bResult: null,
+    switch1Closed: false,
+    switch2Closed: false
   };
 
   var genA = document.getElementById('genA');
@@ -367,11 +435,85 @@
   var bResultDisplay = document.getElementById('bResultDisplay');
   var aHint = document.getElementById('aHint');
   var resetBtn = document.getElementById('resetBtn');
+  var switch1 = document.getElementById('switch1');
+  var switch2 = document.getElementById('switch2');
+  var lever1 = document.getElementById('switch1-lever');
+  var lever2 = document.getElementById('switch2-lever');
+  var switch1Status = document.getElementById('switch1Status');
+  var switch2Status = document.getElementById('switch2Status');
+  var segLoss = document.getElementById('segLoss');
+  var segLight = document.getElementById('segLight');
+  var segSound = document.getElementById('segSound');
+  var segToB = document.getElementById('segToB');
+  var lossVal = document.getElementById('lossVal');
+  var lightVal = document.getElementById('lightVal');
+  var soundVal = document.getElementById('soundVal');
+  var toBVal = document.getElementById('toBVal');
 
   function applyCrankTransforms() {
     crankA.setAttribute('transform', 'rotate(' + sim.aAngle + ' 190 230)');
     crankB.setAttribute('transform', 'rotate(' + sim.bAngle + ' 1210 230)');
   }
+
+  function energyBreakdown() {
+    var light = sim.switch1Closed ? LIGHT_COST : 0;
+    var sound = sim.switch2Closed ? SOUND_COST : 0;
+    var toB = 100 - LOSS - light - sound;
+    return { loss: LOSS, light: light, sound: sound, toB: toB };
+  }
+
+  function updateEnergyBar() {
+    var e = energyBreakdown();
+    segLoss.style.width = e.loss + '%';
+    segLight.style.width = e.light + '%';
+    segSound.style.width = e.sound + '%';
+    segToB.style.width = e.toB + '%';
+    lossVal.textContent = e.loss;
+    lightVal.textContent = e.light;
+    soundVal.textContent = e.sound;
+    toBVal.textContent = e.toB;
+  }
+
+  function tweenRotate(el, fromDeg, toDeg, cx, cy, duration) {
+    var start = null;
+    function step(now) {
+      if (start == null) start = now;
+      var t = Math.min(1, (now - start) / duration);
+      var eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      var angle = fromDeg + (toDeg - fromDeg) * eased;
+      el.setAttribute('transform', 'rotate(' + angle + ' ' + cx + ' ' + cy + ')');
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function switchesLocked() {
+    return sim.count > 0;
+  }
+
+  function refreshSwitchLockUI() {
+    var locked = switchesLocked();
+    switch1.classList.toggle('locked', locked);
+    switch2.classList.toggle('locked', locked);
+  }
+
+  function toggleSwitch(which) {
+    if (switchesLocked()) return;
+    var closed, lever, cx, statusEl;
+    if (which === 1) {
+      sim.switch1Closed = !sim.switch1Closed;
+      closed = sim.switch1Closed; lever = lever1; cx = 650; statusEl = switch1Status;
+    } else {
+      sim.switch2Closed = !sim.switch2Closed;
+      closed = sim.switch2Closed; lever = lever2; cx = 850; statusEl = switch2Status;
+    }
+    tweenRotate(lever, closed ? -32 : 0, closed ? 0 : -32, cx, 205, 220);
+    statusEl.textContent = closed ? '닫힘' : '열림';
+    updateEnergyBar();
+  }
+
+  switch1.addEventListener('click', function () { toggleSwitch(1); });
+  switch2.addEventListener('click', function () { toggleSwitch(2); });
 
   function animate(now) {
     if (sim.lastFrameTime == null) sim.lastFrameTime = now;
@@ -422,8 +564,9 @@
   function finish() {
     stopHold();
     sim.finished = true;
+    var toB = energyBreakdown().toB;
     var jitter = (Math.random() * 2 - 1) * 0.15;
-    sim.bResult = Math.round((ENERGY_TOTAL_AFTER_LOSS * 0.1 + jitter) * 10) / 10;
+    sim.bResult = Math.round((toB * 0.1 + jitter) * 10) / 10;
     updateUI();
   }
 
@@ -435,6 +578,7 @@
     sim.aAngle = -20;
     sim.bAngle = 20;
     applyCrankTransforms();
+    refreshSwitchLockUI();
     updateUI();
   }
 
@@ -445,9 +589,12 @@
       aHint.textContent = '10회 완료! 다시 하기를 눌러 재시작하세요';
     } else if (sim.holding) {
       aHint.textContent = '누르는 중… 손을 떼면 멈춰요';
+    } else if (sim.count > 0) {
+      aHint.textContent = '손잡이를 누르고 있으면 이어서 돌아가요';
     } else {
-      aHint.textContent = '손잡이를 누르고 있으면 돌아가요';
+      aHint.textContent = '스위치를 정하고 손잡이를 누르고 있으면 돌아가요';
     }
+    refreshSwitchLockUI();
   }
 
   hotspotA.addEventListener('pointerdown', function (e) {
@@ -463,6 +610,7 @@
 
   resetBtn.addEventListener('click', reset);
 
+  updateEnergyBar();
   updateUI();
 })();
 </script>
