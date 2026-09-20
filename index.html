@@ -214,20 +214,76 @@
 
   /* ---------- 실험하기 화면 ---------- */
   #screen-experiment { flex-direction: column; }
+
+  #tutorialBanner {
+    flex: 0 0 auto;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 20px;
+    margin: 10px 24px 0;
+    border-radius: 12px;
+    background: #0f9488;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    text-align: center;
+  }
+  #tutorialBanner.show { display: flex; }
+  #tutorialBanner .badge {
+    background: rgba(255,255,255,0.25);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 13px;
+  }
+
   main {
     flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
     padding: 12px;
     min-height: 320px;
   }
   #circuitStage {
     width: 100%;
     height: 100%;
-    max-width: 1400px;
+    max-width: 1200px;
+    flex: 1 1 auto;
+    min-width: 0;
   }
   svg { width: 100%; height: 100%; display: block; }
+
+  #energyPanel {
+    flex: 0 0 auto;
+    width: 210px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  #donutSvg { width: 100%; max-width: 190px; }
+  .legend-vertical {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13.5px;
+  }
+  .legend-vertical .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 6px 10px;
+  }
+  .legend-vertical .dot { width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; flex: 0 0 auto; }
+  .legend-vertical .name { display: flex; align-items: center; color: var(--text-dim); }
+  .legend-vertical b { color: var(--text); font-variant-numeric: tabular-nums; }
 
   .label {
     font-size: 22px;
@@ -260,6 +316,35 @@
     text-anchor: middle;
   }
 
+  .tutorial-ring {
+    fill: none;
+    stroke: #fbbf24;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .tutorial-ring.active {
+    opacity: 1;
+    animation: ringPulse 1.1s ease-in-out infinite;
+  }
+  @keyframes ringPulse {
+    0%, 100% { opacity: 0.4; stroke-width: 4; }
+    50% { opacity: 1; stroke-width: 8; }
+  }
+
+  .clip-hit { cursor: pointer; touch-action: none; }
+  .wireLeg { stroke: url(#wireGrad); transition: opacity 0.2s; }
+  .wireLeg.disconnected { stroke: #475569; stroke-dasharray: 8 7; opacity: 0.55; }
+
+  #recordBtn.tutorial-highlight, #recordBtn.tutorial-highlight.secondary-btn {
+    background: #0f9488;
+    border-color: #5eead4;
+    animation: btnPulse 1.1s ease-in-out infinite;
+  }
+  @keyframes btnPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(94,234,212,0.6); }
+    50% { box-shadow: 0 0 0 8px rgba(94,234,212,0); }
+  }
+
   footer {
     flex: 0 0 auto;
     display: flex;
@@ -284,18 +369,6 @@
 
   .switch-hit { cursor: pointer; }
   .switch-hit.locked { cursor: not-allowed; opacity: 0.55; }
-
-  #energyBar { flex: 0 0 auto; padding: 8px 24px 0; }
-  #energyBar .bar { display: flex; height: 24px; border-radius: 8px; overflow: hidden; background: #1e293b; border: 1px solid #334155; }
-  #energyBar .seg { height: 100%; transition: width 0.35s ease; }
-  .seg-loss { background: #64748b; }
-  .seg-light { background: #fbbf24; }
-  .seg-sound { background: #38bdf8; }
-  .seg-toB { background: #34d399; }
-
-  .legend { display: flex; justify-content: center; gap: 20px; margin-top: 6px; font-size: 12.5px; color: var(--text-dim); flex-wrap: wrap; }
-  .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
-  .legend b { color: var(--text); font-variant-numeric: tabular-nums; }
 
   #bulb-glass.lit { fill: #fff8cc; stroke: #fde047; filter: url(#glow); }
   #buzzer-body.buzzing { stroke: #38bdf8; filter: url(#glow); animation: buzzShake 0.12s linear infinite; }
@@ -335,21 +408,50 @@
   #recordProgress.complete { color: #34d399; font-weight: 700; }
 
   /* ---------- 정리하기 / 퀴즈 공통 ---------- */
-  textarea.answerBox {
-    width: 100%;
-    min-height: 90px;
+  .fill-sentence {
+    font-size: 17px;
+    line-height: 2.4;
+    margin-bottom: 16px;
+  }
+  .blank {
+    display: inline-block;
+    min-width: 64px;
+    padding: 3px 10px;
+    margin: 0 2px;
+    border-radius: 8px;
+    border: 2px dashed #64748b;
+    background: #0f172a;
+    color: var(--text-dim);
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+  }
+  .blank.filled {
+    border-style: solid;
+    border-color: var(--accent);
+    color: var(--text);
+    background: #123b38;
+  }
+  .blank.correct { border-color: #22c55e; background: #14532d; color: #fff; cursor: default; }
+  .blank.incorrect { border-color: #ef4444; background: #4c1d1d; color: #fff; cursor: default; }
+  .word-bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .word-chip {
+    min-height: 44px;
+    padding: 0 16px;
     border-radius: 10px;
     border: 1px solid #475569;
-    background: #0f172a;
+    background: var(--panel);
     color: var(--text);
     font-size: 15px;
-    font-family: inherit;
-    padding: 12px;
-    resize: vertical;
+    font-weight: 600;
+    cursor: pointer;
   }
-  textarea.answerBox:disabled {
-    opacity: 0.8;
-  }
+  .word-chip:active { background: #334155; }
   .model-answer {
     margin-top: 12px;
     padding: 12px 14px;
@@ -529,6 +631,7 @@
     <!-- ② 실험하기 -->
     <!-- ============================================================ -->
     <section id="screen-experiment" class="screen">
+      <div id="tutorialBanner"><span id="tutorialBannerText"></span></div>
       <main>
         <div id="circuitStage">
           <svg viewBox="0 0 1400 640" xmlns="http://www.w3.org/2000/svg">
@@ -575,31 +678,33 @@
 
             <!-- ============ 전선 (뒤에 깔림) ============ -->
             <!-- 인출선은 항상 회로(가운데) 쪽을 향한 면에서 나온다: A는 오른쪽 면, B는 왼쪽 면 -->
+            <!-- 집게 달린 전선 4개(발전기<->스위치/부하 보드)는 학생이 탭해서 연결한다. 보드 사이 배선(스위치1-2, 전구-버저)은 보드에 이미 납땜된 것으로 보고 항상 연결 상태. -->
             <g id="wires" fill="none" stroke="url(#wireGrad)" stroke-width="7" stroke-linecap="round">
-              <!-- 짧은 인출선: 발전기 몸통 옆면(회로 쪽) -> 클립 크림프 -->
-              <path d="M 260 285 C 268 285 274 286 280 286" />
-              <path d="M 260 345 C 268 344 274 343 280 343" />
-              <path d="M 1140 285 C 1132 285 1126 286 1120 286" />
-              <path d="M 1140 345 C 1132 344 1126 346 1120 347" />
+              <g class="wireLeg disconnected" data-leg="Ared">
+                <path d="M 260 285 C 268 285 274 286 280 286" />
+                <path id="pathTopA" d="M 320 284 C 420 250 520 210 650 205" />
+              </g>
+              <g class="wireLeg disconnected" data-leg="Ablack">
+                <path d="M 260 345 C 268 344 274 343 280 343" />
+                <path id="pathBotA" d="M 320 347 C 450 480 600 470 740 336" />
+              </g>
+              <g class="wireLeg disconnected" data-leg="Bred">
+                <path d="M 1140 285 C 1132 285 1126 286 1120 286" />
+                <path id="pathTopB" d="M 850 205 C 950 230 1020 260 1080 284" />
+              </g>
+              <g class="wireLeg disconnected" data-leg="Bblack">
+                <path d="M 1140 345 C 1132 344 1126 346 1120 347" />
+                <path id="pathBotB" d="M 940 336 C 1000 400 1040 385 1080 343" />
+              </g>
 
-              <!-- 클립A(빨강) 조 -> 스위치1 좌측 단자 (위쪽 공용 레일) -->
-              <path id="pathTopA" d="M 320 284 C 420 250 520 210 650 205" />
-              <!-- 스위치1 좌측 -> 스위치2 좌측 (병렬 입력 공유 레일) -->
+              <!-- 스위치1 좌측 -> 스위치2 좌측 (병렬 입력 공유 레일, 보드 내 고정 배선) -->
               <path id="pathBridgeTop" d="M 650 205 C 720 190 780 190 850 205" />
-              <!-- 스위치2 좌측 -> 클립B(빨강) 조 -->
-              <path id="pathTopB" d="M 850 205 C 950 230 1020 260 1080 284" />
-
-              <!-- 스위치1 우측 단자 -> 꼬마전구 좌측 단자 (단자에 정확히 착지) -->
+              <!-- 스위치1 우측 단자 -> 꼬마전구 좌측 단자 -->
               <path id="pathVert1" d="M 750 214 C 745 260 700 300 660 336" />
               <!-- 스위치2 우측 단자 -> 버저 좌측 단자 -->
               <path id="pathVert2" d="M 950 214 C 945 260 900 300 860 336" />
-
-              <!-- 클립A(검정) 조 -> 꼬마전구 우측 단자 (아래쪽 공용 레일, 보드 밑으로 처짐. 단일 곡선이라 꺾임 없음) -->
-              <path id="pathBotA" d="M 320 347 C 450 480 600 470 740 336" />
               <!-- 꼬마전구 우측 -> 버저 우측 (아래쪽 공용 레일 계속, 처짐) -->
               <path id="pathBotMid" d="M 740 336 C 800 445 880 445 940 336" />
-              <!-- 버저 우측 -> 클립B(검정) 조 -->
-              <path id="pathBotB" d="M 940 336 C 1000 400 1040 385 1080 343" />
             </g>
 
             <!-- ============ 에너지 입자 (전선 위를 흐르는 점) ============ -->
@@ -630,10 +735,27 @@
             </g>
 
             <!-- ============ 클립 4개 (조: 회로 방향 / 크림프: 발전기 인출선) ============ -->
-            <use href="#clip-red" transform="translate(300,285) rotate(-4)"/>
-            <use href="#clip-black" transform="translate(300,345) rotate(6)"/>
-            <use href="#clip-red" transform="translate(1100,285) rotate(184)"/>
-            <use href="#clip-black" transform="translate(1100,345) rotate(186)"/>
+            <!-- 각 클립은 탭하면 해당 전선(wireLeg)이 연결되는 히트 타깃 -->
+            <g class="tutorial-clip" data-clip="Ared">
+              <use href="#clip-red" id="clipUseAred" transform="translate(300,285) rotate(-4)"/>
+              <circle class="clip-hit" data-clip="Ared" cx="300" cy="285" r="30" fill="transparent"/>
+              <circle class="tutorial-ring" data-ring="clip-Ared" cx="300" cy="285" r="34"/>
+            </g>
+            <g class="tutorial-clip" data-clip="Ablack">
+              <use href="#clip-black" id="clipUseAblack" transform="translate(300,345) rotate(6)"/>
+              <circle class="clip-hit" data-clip="Ablack" cx="300" cy="345" r="30" fill="transparent"/>
+              <circle class="tutorial-ring" data-ring="clip-Ablack" cx="300" cy="345" r="34"/>
+            </g>
+            <g class="tutorial-clip" data-clip="Bred">
+              <use href="#clip-red" id="clipUseBred" transform="translate(1100,285) rotate(184)"/>
+              <circle class="clip-hit" data-clip="Bred" cx="1100" cy="285" r="30" fill="transparent"/>
+              <circle class="tutorial-ring" data-ring="clip-Bred" cx="1100" cy="285" r="34"/>
+            </g>
+            <g class="tutorial-clip" data-clip="Bblack">
+              <use href="#clip-black" id="clipUseBblack" transform="translate(1100,345) rotate(186)"/>
+              <circle class="clip-hit" data-clip="Bblack" cx="1100" cy="345" r="30" fill="transparent"/>
+              <circle class="tutorial-ring" data-ring="clip-Bblack" cx="1100" cy="345" r="34"/>
+            </g>
 
             <!-- ============ 손발전기 A ============ -->
             <g id="genA" filter="url(#softShadow)">
@@ -647,6 +769,7 @@
               <circle class="press-ring" cx="190" cy="230" r="88"/>
             </g>
             <circle id="crankHotspotA" cx="190" cy="230" r="88"/>
+            <circle class="tutorial-ring" data-ring="crank" cx="190" cy="230" r="100"/>
             <text class="label" x="190" y="462">손발전기 A</text>
             <text class="sublabel" x="190" y="487">(에너지 투입)</text>
             <text id="aHint" class="hint" x="190" y="507">손잡이를 누르고 있으면 돌아가요</text>
@@ -675,6 +798,7 @@
                 <rect x="650" y="200" width="100" height="10" rx="5" fill="var(--lever)" stroke="var(--lever-dark)" stroke-width="1.5"/>
                 <ellipse cx="738" cy="205" rx="12" ry="9" fill="var(--knob)" stroke="var(--lever-dark)" stroke-width="1.5"/>
               </g>
+              <rect class="tutorial-ring" data-ring="switch1" x="602" y="152" width="196" height="106" rx="18"/>
             </g>
             <text class="label" x="700" y="145">스위치 1 · <tspan id="switch1Status" fill="var(--text-dim)" font-size="15" font-weight="500">열림</tspan></text>
 
@@ -688,6 +812,7 @@
                 <rect x="850" y="200" width="100" height="10" rx="5" fill="var(--lever)" stroke="var(--lever-dark)" stroke-width="1.5"/>
                 <ellipse cx="938" cy="205" rx="12" ry="9" fill="var(--knob)" stroke="var(--lever-dark)" stroke-width="1.5"/>
               </g>
+              <rect class="tutorial-ring" data-ring="switch2" x="802" y="152" width="196" height="106" rx="18"/>
             </g>
             <text class="label" x="900" y="145">스위치 2 · <tspan id="switch2Status" fill="var(--text-dim)" font-size="15" font-weight="500">열림</tspan></text>
 
@@ -722,21 +847,24 @@
 
           </svg>
         </div>
+        <div id="energyPanel">
+          <svg id="donutSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#1e293b" stroke-width="28"/>
+            <g transform="rotate(-90 100 100)">
+              <circle id="donutLight" cx="100" cy="100" r="70" fill="none" stroke="#fbbf24" stroke-width="28" stroke-dasharray="0 440"/>
+              <circle id="donutSound" cx="100" cy="100" r="70" fill="none" stroke="#38bdf8" stroke-width="28" stroke-dasharray="0 440"/>
+              <circle id="donutToB" cx="100" cy="100" r="70" fill="none" stroke="#34d399" stroke-width="28" stroke-dasharray="440 440"/>
+            </g>
+            <text id="donutCenterVal" x="100" y="96" text-anchor="middle" font-size="30" font-weight="700" fill="#f1f5f9">100%</text>
+            <text x="100" y="120" text-anchor="middle" font-size="12" fill="#94a3b8">B로 전달</text>
+          </svg>
+          <div class="legend-vertical">
+            <div class="row"><span class="name"><i class="dot" style="background:#fbbf24"></i>빛 에너지(전구)</span><b id="lightVal">0</b></div>
+            <div class="row"><span class="name"><i class="dot" style="background:#38bdf8"></i>소리 에너지(버저)</span><b id="soundVal">0</b></div>
+            <div class="row"><span class="name"><i class="dot" style="background:#34d399"></i>B로 전달</span><b id="toBVal">87</b></div>
+          </div>
+        </div>
       </main>
-      <section id="energyBar">
-        <div class="bar">
-          <div class="seg seg-loss" id="segLoss"></div>
-          <div class="seg seg-light" id="segLight"></div>
-          <div class="seg seg-sound" id="segSound"></div>
-          <div class="seg seg-toB" id="segToB"></div>
-        </div>
-        <div class="legend">
-          <span><i class="dot" style="background:#64748b"></i>저항·마찰 손실 <b id="lossVal">13</b></span>
-          <span><i class="dot" style="background:#fbbf24"></i>빛 에너지(전구) <b id="lightVal">0</b></span>
-          <span><i class="dot" style="background:#38bdf8"></i>소리 에너지(버저) <b id="soundVal">0</b></span>
-          <span><i class="dot" style="background:#34d399"></i>B로 전달 <b id="toBVal">87</b></span>
-        </div>
-      </section>
       <footer>
         <div class="readout">
           <div class="value" id="aCountDisplay">0/10회</div>
@@ -779,16 +907,16 @@
     <section id="screen-reflection" class="screen">
       <div class="panel">
         <h2>정리하기</h2>
-        <div class="sub">실험에서 관찰한 것을 자신의 말로 설명해 보세요. 제출하면 모범 답안이 공개돼요.</div>
+        <div class="sub">문장의 빈칸에 알맞은 낱말을 아래에서 골라 넣어보세요.</div>
 
         <div class="card">
           <h3>1. 손발전기 A의 손잡이를 돌릴 때 손발전기 B의 손잡이가 돌아가는 현상을 에너지 전환으로 설명해 보자.</h3>
-          <textarea class="answerBox" id="reflect1Input" placeholder="여기에 답을 적어보세요"></textarea>
-          <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
+          <div id="reflect1Container"></div>
+          <div class="btn-row" style="justify-content:flex-start;margin-top:4px;">
             <button class="secondary-btn" id="reflect1Submit" type="button">제출</button>
           </div>
           <div class="model-answer" id="reflect1Answer">
-            <span class="tag">예시 답안</span>
+            <span class="tag">정답 문장</span>
             <div>손발전기 A에서 손잡이를 돌리는 역학적 에너지는 전기 에너지로 전환된 후, 이 전기 에너지는 다시 손발전기 B의 손잡이를 돌리는 역학적 에너지로 전환된다.</div>
             <div class="guide">길잡이: 손발전기에 들어 있는 발전기는 전동기와 같다는 것을 학생들에게 알리면 에너지 전환 과정을 좀 더 쉽게 설명할 수 있다.</div>
           </div>
@@ -796,12 +924,12 @@
 
         <div class="card">
           <h3>2. 손발전기 A의 손잡이를 돌릴 때 닫은 스위치에 따라 손발전기 B의 손잡이가 돌아가는 횟수가 다른 까닭은 무엇일지 모둠원들과 토의해 보자.</h3>
-          <textarea class="answerBox" id="reflect2Input" placeholder="여기에 답을 적어보세요"></textarea>
-          <div class="btn-row" style="justify-content:flex-start;margin-top:10px;">
+          <div id="reflect2Container"></div>
+          <div class="btn-row" style="justify-content:flex-start;margin-top:4px;">
             <button class="secondary-btn" id="reflect2Submit" type="button">제출</button>
           </div>
           <div class="model-answer" id="reflect2Answer">
-            <span class="tag">예시 답안</span>
+            <span class="tag">정답 문장</span>
             <div>손발전기 A에서 전환된 전기 에너지가 꼬마전구나 버저에서 빛 또는 소리 에너지로 전환되고, 남은 전기 에너지가 손발전기 B의 손잡이의 역학적 에너지로 전환되기 때문이다.</div>
           </div>
         </div>
@@ -997,11 +1125,10 @@
   var lever2 = document.getElementById('switch2-lever');
   var switch1Status = document.getElementById('switch1Status');
   var switch2Status = document.getElementById('switch2Status');
-  var segLoss = document.getElementById('segLoss');
-  var segLight = document.getElementById('segLight');
-  var segSound = document.getElementById('segSound');
-  var segToB = document.getElementById('segToB');
-  var lossVal = document.getElementById('lossVal');
+  var donutLight = document.getElementById('donutLight');
+  var donutSound = document.getElementById('donutSound');
+  var donutToB = document.getElementById('donutToB');
+  var donutCenterVal = document.getElementById('donutCenterVal');
   var lightVal = document.getElementById('lightVal');
   var soundVal = document.getElementById('soundVal');
   var toBVal = document.getElementById('toBVal');
@@ -1012,6 +1139,105 @@
   var buzzerBody = document.getElementById('buzzer-body');
   var soundToggleBtn = document.getElementById('soundToggleBtn');
   var recordProgress = document.getElementById('recordProgress');
+
+  /* ============================================================
+     첫 실행 가이드 튜토리얼: 전선 연결 -> A 크랭크 -> 스위치1 -> 크랭크 -> 스위치2 -> 크랭크
+     ============================================================ */
+  var tutorialBanner = document.getElementById('tutorialBanner');
+  var tutorialBannerText = document.getElementById('tutorialBannerText');
+  var tutorialStep = 'wires'; // wires -> crank1 -> switch1 -> crank2 -> switch2 -> crank3 -> done
+  var circuitConnected = false;
+  var connectedLegs = { Ared: false, Ablack: false, Bred: false, Bblack: false };
+
+  var TUTORIAL_MESSAGES = {
+    wires: '👉 전선을 눌러 연결하세요',
+    crank1: '👉 A의 손잡이를 눌러보세요',
+    crank2: '👉 A의 손잡이를 눌러보세요',
+    crank3: '👉 A의 손잡이를 눌러보세요',
+    switch1: '👉 스위치 1을 눌러서 닫아보세요',
+    switch2: '👉 스위치 2를 눌러서 닫아보세요'
+  };
+
+  var tutorialRings = Array.prototype.slice.call(document.querySelectorAll('.tutorial-ring'));
+
+  function setActiveRing(ringKey) {
+    tutorialRings.forEach(function (el) {
+      el.classList.toggle('active', el.dataset.ring === ringKey);
+    });
+  }
+
+  function updateWireRings() {
+    Object.keys(connectedLegs).forEach(function (leg) {
+      var ring = document.querySelector('.tutorial-ring[data-ring="clip-' + leg + '"]');
+      if (ring) ring.classList.toggle('active', !connectedLegs[leg]);
+    });
+  }
+
+  function setTutorialStep(step) {
+    tutorialStep = step;
+    if (step === 'wires') {
+      tutorialBanner.classList.add('show');
+      tutorialBannerText.textContent = TUTORIAL_MESSAGES.wires;
+      updateWireRings();
+    } else if (step === 'done') {
+      tutorialBanner.classList.remove('show');
+      setActiveRing(null);
+      recordBtn.classList.remove('tutorial-highlight');
+    } else {
+      tutorialBanner.classList.add('show');
+      tutorialBannerText.textContent = TUTORIAL_MESSAGES[step];
+      recordBtn.classList.remove('tutorial-highlight');
+      if (step === 'crank1' || step === 'crank2' || step === 'crank3') {
+        setActiveRing('crank');
+      } else if (step === 'switch1') {
+        setActiveRing('switch1');
+      } else if (step === 'switch2') {
+        setActiveRing('switch2');
+      }
+    }
+  }
+
+  function connectLeg(legKey) {
+    if (tutorialStep !== 'wires' || connectedLegs[legKey]) return;
+    connectedLegs[legKey] = true;
+    var legGroup = document.querySelector('.wireLeg[data-leg="' + legKey + '"]');
+    if (legGroup) legGroup.classList.remove('disconnected');
+    updateWireRings();
+    if (Object.keys(connectedLegs).every(function (k) { return connectedLegs[k]; })) {
+      circuitConnected = true;
+      setTutorialStep('crank1');
+    }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.clip-hit'), function (hit) {
+    hit.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      connectLeg(hit.dataset.clip);
+    });
+  });
+
+  // 크랭크를 10회 다 돌리고 나면, 튜토리얼 중에는 "결과 기록" 버튼을 강조한다.
+  function promptRecordIfTutorial() {
+    if (tutorialStep === 'crank1' || tutorialStep === 'crank2' || tutorialStep === 'crank3') {
+      tutorialBannerText.textContent = '👉 결과 기록을 눌러보세요';
+      setActiveRing(null);
+      recordBtn.classList.add('tutorial-highlight');
+    }
+  }
+
+  // 결과를 기록한 뒤, 아직 닫지 않은 스위치가 있으면 그걸 닫으라고 안내하고,
+  // 둘 다 닫혀 있으면 튜토리얼을 종료하고 자유 실험으로 넘어간다.
+  function advanceTutorialAfterRecord() {
+    if (tutorialStep !== 'crank1' && tutorialStep !== 'crank2' && tutorialStep !== 'crank3') return;
+    reset();
+    if (!sim.switch1Closed) {
+      setTutorialStep('switch1');
+    } else if (!sim.switch2Closed) {
+      setTutorialStep('switch2');
+    } else {
+      setTutorialStep('done');
+    }
+  }
 
   var soundEnabled = false;
   var audioCtx = null;
@@ -1067,13 +1293,30 @@
     return { loss: LOSS, light: light, sound: sound, toB: toB };
   }
 
-  function updateEnergyBar() {
+  var DONUT_CIRCUMFERENCE = 2 * Math.PI * 70;
+
+  // 저항·마찰 손실은 이 단원에서 다루지 않으므로 도넛 시각화에서는 제외하고,
+  // 빛/소리/B 전달 3가지만 그 셋의 합을 100%로 다시 정규화해서 보여준다.
+  // (B 회전수 계산 자체는 energyBreakdown()의 손실 13을 그대로 반영해 실측치와 일치시킨다.)
+  function updateDonut() {
     var e = energyBreakdown();
-    segLoss.style.width = e.loss + '%';
-    segLight.style.width = e.light + '%';
-    segSound.style.width = e.sound + '%';
-    segToB.style.width = e.toB + '%';
-    lossVal.textContent = e.loss;
+    var visibleTotal = e.light + e.sound + e.toB;
+    var lightFrac = visibleTotal > 0 ? e.light / visibleTotal : 0;
+    var soundFrac = visibleTotal > 0 ? e.sound / visibleTotal : 0;
+    var toBFrac = visibleTotal > 0 ? e.toB / visibleTotal : 0;
+
+    var lightLen = lightFrac * DONUT_CIRCUMFERENCE;
+    var soundLen = soundFrac * DONUT_CIRCUMFERENCE;
+    var toBLen = toBFrac * DONUT_CIRCUMFERENCE;
+
+    donutLight.setAttribute('stroke-dasharray', lightLen + ' ' + (DONUT_CIRCUMFERENCE - lightLen));
+    donutLight.setAttribute('stroke-dashoffset', '0');
+    donutSound.setAttribute('stroke-dasharray', soundLen + ' ' + (DONUT_CIRCUMFERENCE - soundLen));
+    donutSound.setAttribute('stroke-dashoffset', String(-lightLen));
+    donutToB.setAttribute('stroke-dasharray', toBLen + ' ' + (DONUT_CIRCUMFERENCE - toBLen));
+    donutToB.setAttribute('stroke-dashoffset', String(-(lightLen + soundLen)));
+
+    donutCenterVal.textContent = Math.round(toBFrac * 100) + '%';
     lightVal.textContent = e.light;
     soundVal.textContent = e.sound;
     toBVal.textContent = e.toB;
@@ -1121,7 +1364,7 @@
   }
 
   function toggleSwitch(which) {
-    if (switchesLocked()) return;
+    if (!circuitConnected || switchesLocked()) return;
     var closed, lever, cx, statusEl;
     if (which === 1) {
       sim.switch1Closed = !sim.switch1Closed;
@@ -1132,8 +1375,14 @@
     }
     tweenRotate(lever, closed ? -32 : 0, closed ? 0 : -32, cx, 205, 220);
     statusEl.textContent = closed ? '닫힘' : '열림';
-    updateEnergyBar();
+    updateDonut();
     updateLoadVisuals();
+
+    if (closed && which === 1 && tutorialStep === 'switch1') {
+      setTutorialStep('crank2');
+    } else if (closed && which === 2 && tutorialStep === 'switch2') {
+      setTutorialStep('crank3');
+    }
   }
 
   switch1.addEventListener('click', function () { toggleSwitch(1); });
@@ -1165,7 +1414,7 @@
   }
 
   function startHold() {
-    if (sim.finished || sim.holding) return;
+    if (!circuitConnected || sim.finished || sim.holding) return;
     ensureAudioCtx();
     sim.holding = true;
     sim.lastFrameTime = null;
@@ -1199,6 +1448,7 @@
     sim.bResult = Math.round((toB * 0.1 + jitter) * 10) / 10;
     updateLoadVisuals();
     updateUI();
+    promptRecordIfTutorial();
   }
 
   function recordKey() {
@@ -1225,6 +1475,7 @@
     sim.recordedThisRun = true;
     renderRecordTable();
     updateUI();
+    advanceTutorialAfterRecord();
   });
 
   function reset() {
@@ -1245,13 +1496,17 @@
     aCountDisplay.textContent = sim.count + '/10회';
     bResultDisplay.textContent = sim.bResult != null ? sim.bResult.toFixed(1) + '회' : '—';
     if (sim.finished) {
-      aHint.textContent = '10회 완료! 다시 하기를 눌러 재시작하세요';
+      aHint.textContent = '10회 완료!' + (tutorialStep === 'done' ? ' 다시 하기를 눌러 재시작하세요' : '');
     } else if (sim.holding) {
       aHint.textContent = '누르는 중… 손을 떼면 멈춰요';
+    } else if (!circuitConnected) {
+      aHint.textContent = '';
     } else if (sim.count > 0) {
       aHint.textContent = '손잡이를 누르고 있으면 이어서 돌아가요';
-    } else {
+    } else if (tutorialStep === 'done') {
       aHint.textContent = '스위치를 정하고 손잡이를 누르고 있으면 돌아가요';
+    } else {
+      aHint.textContent = '';
     }
     refreshSwitchLockUI();
     recordBtn.disabled = !(sim.finished && !sim.recordedThisRun);
@@ -1272,23 +1527,161 @@
   resetBtn.addEventListener('click', reset);
 
   if (svgRoot.pauseAnimations) svgRoot.pauseAnimations();
-  updateEnergyBar();
+  updateDonut();
   updateLoadVisuals();
   updateUI();
   renderRecordTable();
+  setTutorialStep('wires');
 
   /* ============================================================
-     정리하기
+     정리하기: 빈칸 채우기
      ============================================================ */
-  var reflectAnswers = { 1: '', 2: '' };
+  var reflectData = {
+    1: {
+      parts: [
+        '손발전기 A에서 손잡이를 돌리는 ', { blank: true, answer: '역학적' },
+        ' 에너지는 ', { blank: true, answer: '전기' },
+        ' 에너지로 전환된 후, 이 전기 에너지는 다시 손발전기 B의 손잡이를 돌리는 ', { blank: true, answer: '역학적' },
+        ' 에너지로 전환된다.'
+      ],
+      wordBank: ['역학적', '전기', '빛', '소리', '화학적']
+    },
+    2: {
+      parts: [
+        '손발전기 A에서 전환된 전기 에너지가 꼬마전구나 버저에서 ', { blank: true, answer: '빛', group: 'q2ab' },
+        ' 또는 ', { blank: true, answer: '소리', group: 'q2ab' },
+        ' 에너지로 전환되고, 남은 전기 에너지가 손발전기 B의 손잡이의 ', { blank: true, answer: '역학적' },
+        ' 에너지로 전환되기 때문이다.'
+      ],
+      wordBank: ['빛', '소리', '역학적', '전기', '화학적']
+    }
+  };
 
-  function wireReflect(n) {
-    var input = document.getElementById('reflect' + n + 'Input');
-    var submitBtn = document.getElementById('reflect' + n + 'Submit');
-    var answerBox = document.getElementById('reflect' + n + 'Answer');
+  var reflectState = {
+    1: { filled: [], submitted: false, correctCount: 0, total: 0 },
+    2: { filled: [], submitted: false, correctCount: 0, total: 0 }
+  };
+
+  function updateSubmitEnabled(qid) {
+    var state = reflectState[qid];
+    document.getElementById('reflect' + qid + 'Submit').disabled = state.filled.some(function (w) { return w == null; });
+  }
+
+  function renderReflect(qid) {
+    var data = reflectData[qid];
+    var container = document.getElementById('reflect' + qid + 'Container');
+    container.innerHTML = '';
+    var state = reflectState[qid];
+    var blankCount = data.parts.filter(function (p) { return typeof p !== 'string'; }).length;
+    state.filled = new Array(blankCount).fill(null);
+    state.submitted = false;
+
+    var sentenceDiv = document.createElement('div');
+    sentenceDiv.className = 'fill-sentence';
+    var blankIndex = 0;
+    data.parts.forEach(function (part) {
+      if (typeof part === 'string') {
+        sentenceDiv.appendChild(document.createTextNode(part));
+        return;
+      }
+      var idx = blankIndex++;
+      var span = document.createElement('span');
+      span.className = 'blank';
+      span.textContent = '____';
+      span.dataset.index = idx;
+      span.addEventListener('click', function () {
+        if (state.submitted || state.filled[idx] == null) return;
+        state.filled[idx] = null;
+        span.textContent = '____';
+        span.classList.remove('filled');
+        updateSubmitEnabled(qid);
+      });
+      sentenceDiv.appendChild(span);
+    });
+    container.appendChild(sentenceDiv);
+
+    var bankDiv = document.createElement('div');
+    bankDiv.className = 'word-bank';
+    data.wordBank.forEach(function (word) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'word-chip';
+      chip.textContent = word;
+      chip.addEventListener('click', function () {
+        if (state.submitted) return;
+        var blanks = sentenceDiv.querySelectorAll('.blank');
+        for (var i = 0; i < blanks.length; i++) {
+          if (state.filled[i] == null) {
+            state.filled[i] = word;
+            blanks[i].textContent = word;
+            blanks[i].classList.add('filled');
+            break;
+          }
+        }
+        updateSubmitEnabled(qid);
+      });
+      bankDiv.appendChild(chip);
+    });
+    container.appendChild(bankDiv);
+
+    updateSubmitEnabled(qid);
+  }
+
+  function gradeReflect(qid) {
+    var data = reflectData[qid];
+    var state = reflectState[qid];
+    var blankDefs = data.parts.filter(function (p) { return typeof p !== 'string'; });
+    var blanks = document.getElementById('reflect' + qid + 'Container').querySelectorAll('.blank');
+
+    var correctFlags = blankDefs.map(function () { return false; });
+    var groups = {};
+    blankDefs.forEach(function (def, i) {
+      if (def.group) {
+        groups[def.group] = groups[def.group] || [];
+        groups[def.group].push(i);
+      } else {
+        correctFlags[i] = state.filled[i] === def.answer;
+      }
+    });
+    // 순서가 바뀌어도 되는 빈칸 묶음(예: 빛/소리)은 정답 낱말의 '집합'만 맞으면 정답 처리
+    Object.keys(groups).forEach(function (g) {
+      var idxs = groups[g];
+      var expected = idxs.map(function (i) { return blankDefs[i].answer; }).slice().sort();
+      var actual = idxs.map(function (i) { return state.filled[i]; }).slice().sort();
+      var ok = JSON.stringify(expected) === JSON.stringify(actual);
+      idxs.forEach(function (i) { correctFlags[i] = ok; });
+    });
+
+    blanks.forEach(function (span, i) {
+      span.classList.remove('filled');
+      span.classList.add(correctFlags[i] ? 'correct' : 'incorrect');
+    });
+
+    state.submitted = true;
+    state.correctCount = correctFlags.filter(Boolean).length;
+    state.total = correctFlags.length;
+  }
+
+  function reflectSummaryText(qid) {
+    var state = reflectState[qid];
+    if (!state.submitted) return '응답하지 않음';
+    var data = reflectData[qid];
+    var blankIndex = 0;
+    var text = '';
+    data.parts.forEach(function (part) {
+      if (typeof part === 'string') { text += part; return; }
+      text += (state.filled[blankIndex] || '＿＿');
+      blankIndex++;
+    });
+    return text + ' — ' + state.correctCount + '/' + state.total + '칸 정답';
+  }
+
+  function wireReflect(qid) {
+    renderReflect(qid);
+    var submitBtn = document.getElementById('reflect' + qid + 'Submit');
+    var answerBox = document.getElementById('reflect' + qid + 'Answer');
     submitBtn.addEventListener('click', function () {
-      reflectAnswers[n] = input.value.trim();
-      input.disabled = true;
+      gradeReflect(qid);
       submitBtn.disabled = true;
       answerBox.classList.add('show');
     });
@@ -1403,8 +1796,8 @@
   function fillSummary() {
     renderRecordTable();
 
-    document.getElementById('sumReflect1').textContent = reflectAnswers[1] || '(작성하지 않음)';
-    document.getElementById('sumReflect2').textContent = reflectAnswers[2] || '(작성하지 않음)';
+    document.getElementById('sumReflect1').textContent = reflectSummaryText(1);
+    document.getElementById('sumReflect2').textContent = reflectSummaryText(2);
 
     var correctCount = quizAnswers.filter(function (a) { return a && a.correct; }).length;
     document.getElementById('summaryScore').textContent = correctCount + ' / 2문항 정답';
@@ -1427,15 +1820,12 @@
   document.getElementById('restartBtn').addEventListener('click', function () {
     if (!window.confirm('모든 기록을 지우고 처음부터 다시 시작할까요?')) return;
     records['00'] = records['10'] = records['01'] = records['11'] = null;
-    reflectAnswers[1] = reflectAnswers[2] = '';
     quizAnswers = [null, null];
-    document.getElementById('reflect1Input').value = '';
-    document.getElementById('reflect1Input').disabled = false;
-    document.getElementById('reflect1Submit').disabled = false;
+    renderReflect(1);
+    document.getElementById('reflect1Submit').disabled = true;
     document.getElementById('reflect1Answer').classList.remove('show');
-    document.getElementById('reflect2Input').value = '';
-    document.getElementById('reflect2Input').disabled = false;
-    document.getElementById('reflect2Submit').disabled = false;
+    renderReflect(2);
+    document.getElementById('reflect2Submit').disabled = true;
     document.getElementById('reflect2Answer').classList.remove('show');
     renderQuiz();
     checkQuizComplete();
@@ -1447,9 +1837,16 @@
     switch2Status.textContent = '열림';
     lever1.setAttribute('transform', 'rotate(-32 650 205)');
     lever2.setAttribute('transform', 'rotate(-32 850 205)');
-    updateEnergyBar();
+    updateDonut();
     reset();
     renderRecordTable();
+
+    circuitConnected = false;
+    connectedLegs = { Ared: false, Ablack: false, Bred: false, Bblack: false };
+    Array.prototype.forEach.call(document.querySelectorAll('.wireLeg'), function (leg) {
+      leg.classList.add('disconnected');
+    });
+    setTutorialStep('wires');
 
     maxVisitedIndex = 0;
     showScreen('intro');
