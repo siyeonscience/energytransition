@@ -101,13 +101,70 @@
     stroke-width: 11;
     stroke-linecap: round;
   }
+
+  #crankHotspotA {
+    fill: transparent;
+    cursor: pointer;
+    touch-action: none;
+  }
+  .press-ring {
+    fill: none;
+    stroke: #5eead4;
+    stroke-width: 4;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #genA.holding .press-ring {
+    opacity: 0.9;
+  }
+  .hint {
+    font-size: 14px;
+    fill: var(--text-dim);
+    text-anchor: middle;
+  }
+
+  footer {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 14px 24px 20px;
+    border-top: 1px solid #334155;
+  }
+  .readout {
+    text-align: center;
+    min-width: 160px;
+  }
+  .readout .value {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .readout .caption {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  #resetBtn {
+    min-height: 48px;
+    padding: 0 20px;
+    border-radius: 10px;
+    border: 1px solid #475569;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #resetBtn:active { background: #334155; }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <h1>전자기 유도 에너지 전환 시뮬레이션</h1>
-    <span class="stage">1단계 체크포인트 · 회로도 정적 렌더</span>
+    <span class="stage">2단계 체크포인트 · A 손잡이 + B 자동 회전 + 계측</span>
   </header>
   <main>
     <div id="circuitStage">
@@ -190,9 +247,12 @@
             <circle cx="190" cy="150" r="14" fill="var(--crank)" stroke="var(--crank-dark)" stroke-width="3"/>
           </g>
           <circle cx="190" cy="230" r="10" fill="var(--crank-dark)"/>
+          <circle class="press-ring" cx="190" cy="230" r="88"/>
         </g>
+        <circle id="crankHotspotA" cx="190" cy="230" r="88"/>
         <text class="label" x="190" y="462">손발전기 A</text>
         <text class="sublabel" x="190" y="487">(에너지 투입)</text>
+        <text id="aHint" class="hint" x="190" y="507">손잡이를 누르고 있으면 돌아가요</text>
 
         <!-- ============ 손발전기 B ============ -->
         <g id="genB" filter="url(#softShadow)">
@@ -266,6 +326,145 @@
       </svg>
     </div>
   </main>
+  <footer>
+    <div class="readout">
+      <div class="value" id="aCountDisplay">0/10회</div>
+      <div class="caption">A 손잡이</div>
+    </div>
+    <div class="readout">
+      <div class="value" id="bResultDisplay">—</div>
+      <div class="caption">B 손잡이 회전수</div>
+    </div>
+    <button id="resetBtn" type="button">다시 하기</button>
+  </footer>
 </div>
+<script>
+(function () {
+  'use strict';
+
+  var TICK_MS = 600;       // 0.6초당 1회 -> 10회 = 6초
+  var TARGET_COUNT = 10;
+  var ROTATION_SPEED = 320; // deg/sec, 누르는 동안의 시각적 회전 속도
+  var ENERGY_TOTAL_AFTER_LOSS = 87; // 마찰·저항 손실(13) 제외, 스위치 로직은 3단계에서 추가
+
+  var sim = {
+    count: 0,
+    holding: false,
+    finished: false,
+    aAngle: -20,
+    bAngle: 20,
+    rafId: null,
+    tickTimer: null,
+    lastFrameTime: null,
+    bResult: null
+  };
+
+  var genA = document.getElementById('genA');
+  var crankA = document.getElementById('genA-crank');
+  var crankB = document.getElementById('genB-crank');
+  var hotspotA = document.getElementById('crankHotspotA');
+  var aCountDisplay = document.getElementById('aCountDisplay');
+  var bResultDisplay = document.getElementById('bResultDisplay');
+  var aHint = document.getElementById('aHint');
+  var resetBtn = document.getElementById('resetBtn');
+
+  function applyCrankTransforms() {
+    crankA.setAttribute('transform', 'rotate(' + sim.aAngle + ' 190 230)');
+    crankB.setAttribute('transform', 'rotate(' + sim.bAngle + ' 1210 230)');
+  }
+
+  function animate(now) {
+    if (sim.lastFrameTime == null) sim.lastFrameTime = now;
+    var dt = (now - sim.lastFrameTime) / 1000;
+    sim.lastFrameTime = now;
+    var delta = ROTATION_SPEED * dt;
+    sim.aAngle += delta;
+    sim.bAngle -= delta;
+    applyCrankTransforms();
+    if (sim.holding) {
+      sim.rafId = requestAnimationFrame(animate);
+    }
+  }
+
+  function tick() {
+    if (sim.finished) return;
+    sim.count++;
+    if (sim.count >= TARGET_COUNT) {
+      sim.count = TARGET_COUNT;
+      updateUI();
+      finish();
+      return;
+    }
+    updateUI();
+  }
+
+  function startHold() {
+    if (sim.finished || sim.holding) return;
+    sim.holding = true;
+    sim.lastFrameTime = null;
+    genA.classList.add('holding');
+    sim.rafId = requestAnimationFrame(animate);
+    sim.tickTimer = setInterval(tick, TICK_MS);
+    updateUI();
+  }
+
+  function stopHold() {
+    if (!sim.holding) return;
+    sim.holding = false;
+    genA.classList.remove('holding');
+    if (sim.rafId) cancelAnimationFrame(sim.rafId);
+    if (sim.tickTimer) clearInterval(sim.tickTimer);
+    sim.rafId = null;
+    sim.tickTimer = null;
+    updateUI();
+  }
+
+  function finish() {
+    stopHold();
+    sim.finished = true;
+    var jitter = (Math.random() * 2 - 1) * 0.15;
+    sim.bResult = Math.round((ENERGY_TOTAL_AFTER_LOSS * 0.1 + jitter) * 10) / 10;
+    updateUI();
+  }
+
+  function reset() {
+    stopHold();
+    sim.count = 0;
+    sim.finished = false;
+    sim.bResult = null;
+    sim.aAngle = -20;
+    sim.bAngle = 20;
+    applyCrankTransforms();
+    updateUI();
+  }
+
+  function updateUI() {
+    aCountDisplay.textContent = sim.count + '/10회';
+    bResultDisplay.textContent = sim.bResult != null ? sim.bResult.toFixed(1) + '회' : '—';
+    if (sim.finished) {
+      aHint.textContent = '10회 완료! 다시 하기를 눌러 재시작하세요';
+    } else if (sim.holding) {
+      aHint.textContent = '누르는 중… 손을 떼면 멈춰요';
+    } else {
+      aHint.textContent = '손잡이를 누르고 있으면 돌아가요';
+    }
+  }
+
+  hotspotA.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    try { hotspotA.setPointerCapture(e.pointerId); } catch (err) {}
+    startHold();
+  });
+  hotspotA.addEventListener('pointerup', stopHold);
+  hotspotA.addEventListener('pointercancel', stopHold);
+  hotspotA.addEventListener('pointerleave', function (e) {
+    if (e.pointerType === 'mouse') stopHold();
+  });
+
+  resetBtn.addEventListener('click', reset);
+
+  updateUI();
+})();
+</script>
 </body>
 </html>
