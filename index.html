@@ -1113,6 +1113,8 @@
   var LOSS = 13;            // 저항·마찰 손실, 항상 발생
   var LIGHT_COST = 24;      // 스위치1(꼬마전구) 닫힘 시 소비
   var SOUND_COST = 3;       // 스위치2(버저) 닫힘 시 소비
+  // 스위치 조합별 B 손잡이 회전수(고정값) — 실험 기록표/요약에 그대로 표시되고, B 크랭크의 실제 회전 속도에도 반영된다.
+  var B_RESULT_BY_SWITCH = { '00': 9.4, '10': 6.5, '01': 8.3, '11': 2.1 };
 
   var sim = {
     count: 0,
@@ -1440,7 +1442,8 @@
     sim.lastFrameTime = now;
     var delta = ROTATION_SPEED * dt;
     sim.aAngle += delta;
-    sim.bAngle -= delta;
+    var bRatio = B_RESULT_BY_SWITCH[recordKey()] / TARGET_COUNT;
+    sim.bAngle -= delta * bRatio;
     applyCrankTransforms();
     if (sim.holding) {
       sim.rafId = requestAnimationFrame(animate);
@@ -1489,9 +1492,7 @@
     stopHold();
     sim.finished = true;
     sim.recordedThisRun = false;
-    var toB = energyBreakdown().toB;
-    var jitter = (Math.random() * 2 - 1) * 0.15;
-    sim.bResult = Math.round((toB * 0.1 + jitter) * 10) / 10;
+    sim.bResult = B_RESULT_BY_SWITCH[recordKey()];
     updateLoadVisuals();
     updateUI();
     promptRecordIfTutorial();
