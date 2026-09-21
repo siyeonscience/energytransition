@@ -41,6 +41,7 @@
     touch-action: manipulation;
     -webkit-user-select: none;
     user-select: none;
+    -webkit-touch-callout: none;
   }
   #app {
     display: flex;
@@ -794,7 +795,7 @@
             <circle class="tutorial-ring" data-ring="crank" cx="190" cy="230" r="100"/>
             <text class="label" x="190" y="462">손발전기 A</text>
             <text class="sublabel" x="190" y="487">(에너지 투입)</text>
-            <text id="aHint" class="hint" x="190" y="507">손잡이를 누르고 있으면 돌아가요</text>
+            <text id="aHint" class="hint" x="190" y="507">손잡이를 눌러서 돌리세요</text>
 
             <!-- ============ 손발전기 B ============ -->
             <g id="genB" filter="url(#softShadow)">
@@ -1107,9 +1108,7 @@
   /* ============================================================
      실험하기: 회로 시뮬레이션 엔진
      ============================================================ */
-  var TICK_MS = 600;       // 0.6초당 1회 -> 10회 = 6초
   var TARGET_COUNT = 10;
-  var ROTATION_SPEED = 320; // deg/sec, 누르는 동안의 시각적 회전 속도
   var LOSS = 13;            // 저항·마찰 손실, 항상 발생
   var LIGHT_COST = 24;      // 스위치1(꼬마전구) 닫힘 시 소비
   var SOUND_COST = 3;       // 스위치2(버저) 닫힘 시 소비
@@ -1118,13 +1117,11 @@
 
   var sim = {
     count: 0,
-    holding: false,
+    cranking: false,
+    crankGen: 0,
     finished: false,
     aAngle: -20,
     bAngle: 20,
-    rafId: null,
-    tickTimer: null,
-    lastFrameTime: null,
     bResult: null,
     switch1Closed: false,
     switch2Closed: false,
@@ -1307,7 +1304,7 @@
     gainNode = audioCtx.createGain();
     oscillator.type = 'square';
     oscillator.frequency.value = 480;
-    gainNode.gain.value = 0.12;
+    gainNode.gain.value = 0.04;
     oscillator.connect(gainNode).connect(audioCtx.destination);
     oscillator.start();
   }
@@ -1388,11 +1385,11 @@
   }
 
   function switchesLocked() {
-    return sim.holding || sim.count > 0;
+    return sim.cranking || sim.count > 0;
   }
 
   function updateLoadVisuals() {
-    var active = sim.holding && !sim.finished;
+    var active = sim.cranking && !sim.finished;
     var bulbOn = active && sim.switch1Closed;
     var buzzerOn = active && sim.switch2Closed;
 
@@ -1436,20 +1433,6 @@
   switch1.addEventListener('click', function () { toggleSwitch(1); });
   switch2.addEventListener('click', function () { toggleSwitch(2); });
 
-  function animate(now) {
-    if (sim.lastFrameTime == null) sim.lastFrameTime = now;
-    var dt = (now - sim.lastFrameTime) / 1000;
-    sim.lastFrameTime = now;
-    var delta = ROTATION_SPEED * dt;
-    sim.aAngle += delta;
-    var bRatio = B_RESULT_BY_SWITCH[recordKey()] / TARGET_COUNT;
-    sim.bAngle -= delta * bRatio;
-    applyCrankTransforms();
-    if (sim.holding) {
-      sim.rafId = requestAnimationFrame(animate);
-    }
-  }
-
   function tick() {
     if (sim.finished) return;
     sim.count++;
@@ -1462,34 +1445,53 @@
     updateUI();
   }
 
-  function startHold() {
-    if (!circuitConnected || sim.finished || sim.holding) return;
+  var CRANK_TAP_MS = 320; // 손잡이를 한 번 터치할 때 회전하는 애니메이션 길이
+
+  // 태블릿에서 길게 누르면 브라우저의 길게 누르기 동작(콜아웃 등)과 충돌하므로,
+  // 누르고 있는 동안 계속 도는 방식 대신 한 번 터치할 때마다 1회전씩 돌게 한다.
+  function crankTap() {
+    if (!circuitConnected || sim.finished || sim.cranking) return;
     ensureAudioCtx();
-    sim.holding = true;
-    sim.lastFrameTime = null;
+    sim.cranking = true;
+    var myGen = sim.crankGen;
     genA.classList.add('holding');
-    sim.rafId = requestAnimationFrame(animate);
-    sim.tickTimer = setInterval(tick, TICK_MS);
     if (svgRoot.unpauseAnimations) svgRoot.unpauseAnimations();
     updateLoadVisuals();
     updateUI();
+
+    var fromA = sim.aAngle, toA = sim.aAngle + 360;
+    var bRatio = B_RESULT_BY_SWITCH[recordKey()] / TARGET_COUNT;
+    var fromB = sim.bAngle, toB = sim.bAngle - 360 * bRatio;
+    var start = null;
+    function step(now) {
+      if (myGen !== sim.crankGen) return;
+      if (start == null) start = now;
+      var t = Math.min(1, (now - start) / CRANK_TAP_MS);
+      var eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      sim.aAngle = fromA + (toA - fromA) * eased;
+      sim.bAngle = fromB + (toB - fromB) * eased;
+      applyCrankTransforms();
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        sim.aAngle = toA;
+        sim.bAngle = toB;
+        applyCrankTransforms();
+        finishCrankTap();
+      }
+    }
+    requestAnimationFrame(step);
   }
 
-  function stopHold() {
-    if (!sim.holding) return;
-    sim.holding = false;
+  function finishCrankTap() {
+    sim.cranking = false;
     genA.classList.remove('holding');
-    if (sim.rafId) cancelAnimationFrame(sim.rafId);
-    if (sim.tickTimer) clearInterval(sim.tickTimer);
-    sim.rafId = null;
-    sim.tickTimer = null;
     if (svgRoot.pauseAnimations) svgRoot.pauseAnimations();
     updateLoadVisuals();
-    updateUI();
+    tick();
   }
 
   function finish() {
-    stopHold();
     sim.finished = true;
     sim.recordedThisRun = false;
     sim.bResult = B_RESULT_BY_SWITCH[recordKey()];
@@ -1527,7 +1529,10 @@
   });
 
   function reset() {
-    stopHold();
+    sim.cranking = false;
+    sim.crankGen++;
+    genA.classList.remove('holding');
+    if (svgRoot.pauseAnimations) svgRoot.pauseAnimations();
     sim.count = 0;
     sim.finished = false;
     sim.bResult = null;
@@ -1545,14 +1550,12 @@
     bResultDisplay.textContent = sim.bResult != null ? sim.bResult.toFixed(1) + '회' : '—';
     if (sim.finished) {
       aHint.textContent = '10회 완료!' + (tutorialStep === 'done' ? ' 다시 하기를 눌러 재시작하세요' : '');
-    } else if (sim.holding) {
-      aHint.textContent = '누르는 중… 손을 떼면 멈춰요';
     } else if (!circuitConnected) {
       aHint.textContent = '';
     } else if (sim.count > 0) {
-      aHint.textContent = '손잡이를 누르고 있으면 이어서 돌아가요';
+      aHint.textContent = '손잡이를 계속 눌러서 돌리세요 (' + sim.count + '/10회)';
     } else if (tutorialStep === 'done') {
-      aHint.textContent = '스위치를 정하고 손잡이를 누르고 있으면 돌아가요';
+      aHint.textContent = '스위치를 정하고 손잡이를 눌러서 돌리세요';
     } else {
       aHint.textContent = '';
     }
@@ -1563,13 +1566,7 @@
 
   hotspotA.addEventListener('pointerdown', function (e) {
     e.preventDefault();
-    try { hotspotA.setPointerCapture(e.pointerId); } catch (err) {}
-    startHold();
-  });
-  hotspotA.addEventListener('pointerup', stopHold);
-  hotspotA.addEventListener('pointercancel', stopHold);
-  hotspotA.addEventListener('pointerleave', function (e) {
-    if (e.pointerType === 'mouse') stopHold();
+    crankTap();
   });
 
   resetBtn.addEventListener('click', reset);
