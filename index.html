@@ -374,7 +374,6 @@
   footer .secondary-btn { min-height: 44px; padding: 0 16px; font-size: 14px; }
 
   .switch-hit { cursor: pointer; }
-  .switch-hit.locked { cursor: not-allowed; opacity: 0.55; }
 
   #bulb-glass.lit { fill: #fff8cc; stroke: #fde047; filter: url(#glow); }
   #buzzer-body.buzzing { stroke: #38bdf8; filter: url(#glow); animation: buzzShake 0.12s linear infinite; }
@@ -1384,10 +1383,6 @@
     requestAnimationFrame(step);
   }
 
-  function switchesLocked() {
-    return sim.cranking || sim.count > 0;
-  }
-
   function updateLoadVisuals() {
     var active = sim.cranking && !sim.finished;
     var bulbOn = active && sim.switch1Closed;
@@ -1406,14 +1401,11 @@
     }
   }
 
-  function refreshSwitchLockUI() {
-    var locked = switchesLocked();
-    switch1.classList.toggle('locked', locked);
-    switch2.classList.toggle('locked', locked);
-  }
-
   function toggleSwitch(which) {
-    if (!circuitConnected || switchesLocked()) return;
+    if (!circuitConnected) return;
+    // 크랭크를 돌리는 중이거나 이미 완료된 실험이 있으면, 스위치를 바꾸는 순간 그 실험을 새로 시작한다.
+    // (전에는 "다시 하기"를 눌러야만 스위치 조작이 풀렸는데, 그 과정 없이 바로 조작되게 한다.)
+    if (sim.cranking || sim.count > 0) reset();
     var closed, lever, cx, statusEl;
     if (which === 1) {
       sim.switch1Closed = !sim.switch1Closed;
@@ -1540,7 +1532,6 @@
     sim.aAngle = -20;
     sim.bAngle = 20;
     applyCrankTransforms();
-    refreshSwitchLockUI();
     updateLoadVisuals();
     updateUI();
   }
@@ -1559,7 +1550,6 @@
     } else {
       aHint.textContent = '';
     }
-    refreshSwitchLockUI();
     recordBtn.disabled = !(sim.finished && !sim.recordedThisRun);
     recordBtn.textContent = sim.recordedThisRun ? '기록됨 ✓' : '결과 기록';
   }
